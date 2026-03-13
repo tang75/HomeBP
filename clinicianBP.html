@@ -838,10 +838,13 @@
       const my=(e.clientY-rect.top);
       // Only show tooltip when mouse is within the plot area
       if(mx<PAD.l||mx>rect.width-PAD.r||my<PAD.t||my>rect.height-PAD.b){tip.style.display='none';return;}
-      const xOf=t=>PAD.l+((t-xMinMs)/Math.max(1,xMaxMs-xMinMs))*plotW();
+      const pw=plotW();
+      const xOf=t=>PAD.l+((t-xMinMs)/Math.max(1,xMaxMs-xMinMs))*pw;
+      const spanDays=daysBetween(new Date(xMinMs),new Date(xMaxMs));
+      const barHalf=Math.max(4,(BASE_BAR_W/spanDays)*pw/2)+4;
       let best=null,bestD=Infinity;
-      for(const r of rs){const dx=mx-xOf(r.t.getTime());const d=dx*dx;if(d<bestD){bestD=d;best=r;}}
-      if(!best||bestD>400){tip.style.display='none';return;}
+      for(const r of rs){const dx=Math.abs(mx-xOf(r.t.getTime()));if(dx<bestD){bestD=dx;best=r;}}
+      if(!best||bestD>barHalf){tip.style.display='none';return;}
       let cls;
       if (best.hypo) cls = '<span style="color:#7B1FA2"><b>HYPO</b></span>';
       else if (best.severe) cls = '<span style="color:#c62828"><b>SEVERE</b></span>';
@@ -1857,7 +1860,7 @@
   function clearData() {
     rawRows = null; headers = null; mapping = null;
     readings = []; medIntervals = {}; holdEvents = [];
-    try { localStorage.removeItem('bp_saved_file'); } catch(e) {}
+    try { localStorage.removeItem(STORAGE_PREFIX+'_fileName'); localStorage.removeItem(STORAGE_PREFIX+'_fileData'); } catch(e) {}
     // Reset file input & label
     $('file').value = '';
     $('file').style.display = '';
