@@ -27,7 +27,8 @@ const BPCore = (() => {
   const BASE_BAR_W = 0.28;
   const SEVERE_BAR_W = 0.44;
 
-  const MED_PALETTE = ['#2f6db3','#1b9e77','#d95f02','#7570b3','#66a61e','#e7298a','#a6761d','#e6ab02','#1f78b4','#b2df8a','#fb9a99','#cab2d6'];
+  // Vibrant palette — avoids green/red/purple (used for BP classification)
+  const MED_PALETTE = ['#4285F4','#FF8F00','#00ACC1','#7E57C2','#EC407A','#5C6BC0','#F4511E','#FFB300','#1565C0','#26A69A','#AB47BC','#8D6E63','#0097A7','#D81B60','#546E7A','#FF7043'];
 
   const ALPHA_MIN = 0.15, ALPHA_MAX = 0.85;
   const DOSE_RATIO_MAX = 4;
@@ -502,12 +503,18 @@ const BPCore = (() => {
     return ALPHA_MIN + (ALPHA_MAX - ALPHA_MIN) * Math.max(0, frac);
   }
 
+  // Stable color assignment: first call order determines color, no collisions
+  const _medColorMap = {};
+  let _medColorIdx = 0;
   function getMedColor(drug) {
-    let hash=0;
-    const s=drug.toLowerCase();
-    for(let i=0;i<s.length;i++)hash=((hash<<5)-hash+s.charCodeAt(i))|0;
-    return MED_PALETTE[Math.abs(hash)%MED_PALETTE.length];
+    const key = drug.toLowerCase();
+    if (!(key in _medColorMap)) {
+      _medColorMap[key] = MED_PALETTE[_medColorIdx % MED_PALETTE.length];
+      _medColorIdx++;
+    }
+    return _medColorMap[key];
   }
+  function resetMedColors() { for (const k in _medColorMap) delete _medColorMap[k]; _medColorIdx = 0; }
 
   function hexToRgb01(hex) {
     hex=hex.replace('#','');
@@ -802,7 +809,7 @@ const BPCore = (() => {
     parseMedIntervals,
 
     // Dose shading
-    getStartingDose, alphaForDailyDose, getMedColor, hexToRgb01, chooseSigTextColor,
+    getStartingDose, alphaForDailyDose, getMedColor, resetMedColors, hexToRgb01, chooseSigTextColor,
 
     // Filtering & metrics
     getRangeFiltered, getGoal, computeMetrics,
