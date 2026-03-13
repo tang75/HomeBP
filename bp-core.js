@@ -114,18 +114,54 @@ const BPCore = (() => {
   function parseDateAndTime(dateVal, timeVal) {
     // Handle Excel serial date numbers (e.g. 46083.31162 → 2026-03-02 07:28)
     if (typeof dateVal === 'number' && isFinite(dateVal) && dateVal > 1) {
+      let year, month, day, hours = 0, mins = 0, secs = 0;
       if (typeof XLSX !== 'undefined' && XLSX.SSF && XLSX.SSF.parse_date_code) {
         const d = XLSX.SSF.parse_date_code(dateVal);
-        if (d && d.y) return new Date(d.y, (d.m||1)-1, d.d||1, d.H||0, d.M||0, d.S||0);
+        if (d && d.y) { year = d.y; month = (d.m||1)-1; day = d.d||1; hours = d.H||0; mins = d.M||0; secs = d.S||0; }
       }
-      const jsDate = new Date(Math.round((dateVal - 25569) * 86400000));
-      if (!isNaN(jsDate.getTime())) return jsDate;
+      if (year == null) {
+        const jsDate = new Date(Math.round((dateVal - 25569) * 86400000));
+        if (!isNaN(jsDate.getTime())) { year = jsDate.getUTCFullYear(); month = jsDate.getUTCMonth(); day = jsDate.getUTCDate(); }
+      }
+      if (year != null) {
+        // If serial had no meaningful time (midnight) and a separate timeVal exists, parse it
+        const hasEmbeddedTime = (hours !== 0 || mins !== 0 || secs !== 0);
+        if (!hasEmbeddedTime && timeVal != null && timeVal !== '') {
+          const tp = parseTimeValue(timeVal);
+          if (tp) { hours = tp.h; mins = tp.m; secs = tp.s; }
+        }
+        return new Date(year, month, day, hours, mins, secs);
+      }
     }
     const dStr = String(dateVal||'').trim();
     const tStr = String(timeVal||'').trim();
     if (!dStr) return null;
     const combined = tStr ? `${dStr} ${tStr}` : dStr;
     return tryParseDate(combined);
+  }
+
+  // Parse a time value from various formats: string ("6:51 PM"), number (Excel fraction 0.785)
+  function parseTimeValue(val) {
+    if (typeof val === 'number' && isFinite(val)) {
+      // Excel time fraction: 0.0 = midnight, 0.5 = noon, 0.75 = 6PM
+      const frac = val < 1 ? val : val - Math.floor(val);
+      const totalSecs = Math.round(frac * 86400);
+      return { h: Math.floor(totalSecs / 3600) % 24, m: Math.floor((totalSecs % 3600) / 60), s: totalSecs % 60 };
+    }
+    const s = String(val||'').trim();
+    if (!s) return null;
+    // "6:51 PM", "18:51", "6:51:30 AM", etc.
+    const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i);
+    if (m) {
+      let h = parseInt(m[1], 10);
+      const min = parseInt(m[2], 10);
+      const sec = parseInt(m[3] || '0', 10);
+      const ampm = (m[4] || '').toLowerCase();
+      if (ampm === 'pm' && h < 12) h += 12;
+      if (ampm === 'am' && h === 12) h = 0;
+      return { h, m: min, s: sec };
+    }
+    return null;
   }
 
   // =============================================
@@ -206,7 +242,13 @@ const BPCore = (() => {
       const pulse = mapping.pulseIdx!=null ? Number(String(row[mapping.pulseIdx]??'').trim()) : null;
       const notes = mapping.notesIdx!=null ? String(row[mapping.notesIdx]||'').trim() : '';
 
-      if (!t || !Number.isFinite(sys) || !Number.isFinite(dia)) continue;
+      if (!t || !Number.isFinite(sys) || !Number.isFinite(dia)) {
+        // Continuation row: no date/BP but may have notes — merge into previous reading
+        if (notes && result.length > 0) {
+          result[result.length - 1].notes += '\n' + notes;
+        }
+        continue;
+      }
       if (sys < 60 || sys > 260 || dia < 30 || dia > 160) continue;
 
       const hour = t.getHours();
@@ -515,10 +557,11 @@ const BPCore = (() => {
   // Accepts goalConfig: { profile, customSys, customDia }
   // =============================================
   function getGoal(goalConfig) {
-    const p = goalConfig.profile || 'intl';
+    const p = goalConfig.profile || 'us';
     if (p === 'us') return { sys:130, dia:80 };
+    if (p === 'who') return { sys:140, dia:90 };
     if (p === 'custom') return { sys: goalConfig.customSys || 135, dia: goalConfig.customDia || 85 };
-    return { sys:135, dia:85 };
+    return { sys:130, dia:80 };
   }
 
   // =============================================
@@ -551,13 +594,14 @@ const BPCore = (() => {
   // =============================================
   function phaseStatsFromReadings(sub) {
     const n = sub.length;
-    if (!n) return { meanSBP: null, meanDBP: null, green: null, red: null, severe: null, n: 0 };
+    if (!n) return { meanSBP: null, meanDBP: null, green: null, red: null, severe: null, hypo: null, n: 0 };
     return {
       meanSBP: mean(sub.map(x => x.sys)),
       meanDBP: mean(sub.map(x => x.dia)),
       green: 100 * sub.filter(x => x.green).length / n,
       red: 100 * sub.filter(x => x.red).length / n,
       severe: 100 * sub.filter(x => x.severe).length / n,
+      hypo: 100 * sub.filter(x => x.hypo).length / n,
       n
     };
   }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>HomeBP Insight — Timeline</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="bp-core.js?v=3"></script>
+  <script src="bp-core.js?v=5"></script>
   <style>
     :root { --bg:#ffffff; --card:#ffffff; --muted:#5a6a7a; --text:#1a1a2e; --accent:#2c5dcd; --warn:#b87800; --danger:#c62828; --ok:#1b7a3d; --canvas-bg:#ffffff; }
     *{box-sizing:border-box;}
@@ -91,6 +91,16 @@
     /* Proportion bars (for circadian) */
     .kci-bar-track{ flex:1; height:18px; border-radius:4px; background:rgba(0,0,0,.06); display:flex; overflow:hidden; }
     .kci-bar-seg{ height:100%; }
+    .kci-bar-seg.hatched-severe{
+      background-color:#6A0000;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 3px,
+        rgba(255,255,255,0.35) 3px,
+        rgba(255,255,255,0.35) 6px
+      );
+    }
 
     /* Alert pills */
     .kci-pill{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; margin:2px 4px 2px 0; }
@@ -150,6 +160,7 @@
       .kci-status.status-amber{ background:#fff8e1; border-color:#b87800; }
       .kci-status.status-red{ background:#ffebee; border-color:#c62828; }
       .kci-badge{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
+      .hatched-severe{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       .kci-bar-seg{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       .kci-pill{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       #tab-phases{ page-break-before:always; }
@@ -194,8 +205,8 @@
       <div class="pill">
         <label>Goal</label>
         <select id="profile">
-          <option value="intl" selected>International (&lt;140/90)</option>
-          <option value="us">US (&lt;130/80)</option>
+          <option value="us" selected>US (&lt;130/80)</option>
+          <option value="who">WHO (&lt;140/90)</option>
           <option value="custom">Custom</option>
         </select>
       </div>
@@ -275,7 +286,7 @@
         <canvas id="chartMeds" height="160"></canvas>
       </div>
       <div class="legend-bar">
-        <div class="legend-item"><span class="legend-swatch" style="background:#7B1FA2"></span> Hypotensive: SBP &lt;100 or DBP &lt;60</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#7B1FA2"></span> Low: SBP &lt;100 or DBP &lt;60</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#00C853"></span> Green: SBP &lt;140 AND DBP &lt;90</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#FF4444"></span> Red: SBP 140–159 or DBP 90–99</div>
         <div class="legend-item"><span style="display:inline-block;width:16px;height:12px;border-radius:3px;vertical-align:middle;"><svg width="16" height="12" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="12" rx="2" fill="#FF0000"/><line x1="0" y1="12" x2="12" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="4" y1="12" x2="16" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="8" y1="12" x2="20" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="-4" y1="12" x2="8" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg></span> Severe: SBP &ge;160 or DBP &ge;100</div>
@@ -388,8 +399,9 @@
   function getGoal() {
     const p=$('profile').value;
     if(p==='us')return{sys:130,dia:80};
+    if(p==='who')return{sys:140,dia:90};
     if(p==='custom')return{sys:+$('goalSys').value||135,dia:+$('goalDia').value||85};
-    return{sys:140,dia:90};
+    return{sys:130,dia:80};
   }
   function getGoalConfig() {
     return { profile: $('profile').value, customSys: +$('goalSys').value||135, customDia: +$('goalDia').value||85 };
@@ -766,38 +778,43 @@
         const x0=xOf(s.getTime()), x1=xOf(e.getTime());
         const widthDays=daysBetween(s,e);
 
-        // Draw bar
+        // Draw bar (clamp to visible plot area)
         const [cr,cg,cb]=hexToRgb01(baseColor);
         ctx.fillStyle=`rgba(${Math.round(cr*255)},${Math.round(cg*255)},${Math.round(cb*255)},${alpha})`;
-        ctx.fillRect(x0, y0, x1-x0, bandH);
+        const clampX0 = Math.max(x0, PAD.l);
+        const clampX1 = Math.min(x1, W - PAD.r);
+        if (clampX1 <= clampX0) continue; // segment entirely outside visible range
+        ctx.fillRect(clampX0, y0, clampX1-clampX0, bandH);
 
-        // For ongoing meds, draw a right-pointing arrow at the edge
-        if (ongoing) {
-          const arrowX = x1 - 2;
+        // For ongoing meds, draw a right-pointing arrow (only if end is within visible area)
+        if (ongoing && x1 < W - PAD.r) {
+          const arrowX = clampX1 - 2;
           ctx.fillStyle='rgba(0,0,0,.5)';
           ctx.font='bold 10px system-ui';ctx.textAlign='left';
           ctx.fillText('→', arrowX, yCenter+4);
         }
 
-        // Store hit region for hover
+        // Store hit region for hover (use clamped coords)
         let label=sig||((daily!=null)?medSigLabel(med,daily):'');
         if(!label)label=lastLabel[med]||'';
         lastLabel[med]=label;
-        medBarRegions.push({ x0, x1, y0, y1: y0 + bandH, med, label, start: s, end: e, daily, ongoing: !!ongoing });
+        medBarRegions.push({ x0: clampX0, x1: clampX1, y0, y1: y0 + bandH, med, label, start: s, end: e, daily, ongoing: !!ongoing });
 
         if(!label)continue;
 
-        const midX=(x0+x1)/2;
-        if(widthDays>=SHORT_BAR_DAYS){
+        const midX=(clampX0+clampX1)/2;
+        const clampedWidth = clampX1 - clampX0;
+        const visibleDays = widthDays * (clampedWidth / Math.max(x1 - x0, 1));
+        if(visibleDays>=SHORT_BAR_DAYS){
           const tc=chooseSigTextColor(baseColor,alpha);
           ctx.fillStyle=tc;ctx.font='bold 9px system-ui';ctx.textAlign='center';
           ctx.fillText(label, midX, yCenter+3);
-        } else {
-          // Callout to the right
+        } else if (clampX1 < W - PAD.r - 30) {
+          // Callout to the right (only if there's room)
           ctx.fillStyle='rgba(0,0,0,.85)';ctx.font='bold 9px system-ui';ctx.textAlign='left';
-          ctx.fillText(label, x1+4, yCenter+3);
+          ctx.fillText(label, clampX1+4, yCenter+3);
           ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=0.5;
-          ctx.beginPath();ctx.moveTo(x1,yCenter);ctx.lineTo(x1+3,yCenter);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(clampX1,yCenter);ctx.lineTo(clampX1+3,yCenter);ctx.stroke();
         }
       }
     }
@@ -857,7 +874,7 @@
       }
       if(!best){tip.style.display='none';return;}
       let cls;
-      if (best.hypo) cls = '<span style="color:#7B1FA2"><b>HYPO</b></span>';
+      if (best.hypo) cls = '<span style="color:#7B1FA2"><b>LOW</b></span>';
       else if (best.severe) cls = '<span style="color:#c62828"><b>SEVERE</b></span>';
       else if (best.green) cls = '<span style="color:#1b7a3d">Green</span>';
       else cls = '<span style="color:#b87800">Red</span>';
@@ -948,7 +965,7 @@
 
     $('avgAllLabel').textContent = `Recent ${recentWeeks}-week avg${labelSuffix}`;
     $('avgAll').textContent = fmtBP(rm.avgSys, rm.avgDia);
-    $('avgAllDetail').innerHTML = `n=${rm.count} &bull; <span class="ok"><b>At Goal (&lt;${goal.sys}/${goal.dia})</b> ${fmtPct(rm.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Above Goal</b> ${fmtPct(rm.pctRed)}</span> &bull; <span style="color:#c62828"><b>Severe ${fmtPct(rm.pctSevere)}</b></span>${rm.pctHypo > 0 ? ' &bull; <span style="color:#7B1FA2"><b>Hypo</b> ' + fmtPct(rm.pctHypo) + '</span>' : ''}`;
+    $('avgAllDetail').innerHTML = `n=${rm.count} &bull; <span class="ok"><b>At Goal (&lt;${goal.sys}/${goal.dia})</b> ${fmtPct(rm.pctGreen)}</span> &bull; <span style="color:#d32f2f"><b>Above Goal</b> ${fmtPct(rm.pctRed)}</span> &bull; <span style="color:#c62828"><b>Severe ${fmtPct(rm.pctSevere)}</b></span>${rm.pctHypo > 0 ? ' &bull; <span style="color:#7B1FA2"><b>Low</b> ' + fmtPct(rm.pctHypo) + '</span>' : ''}`;
 
     // Split-status bar: AM (left) | PM (right), colored by status
     const amReadings = rec.filter(x => x.window === 'Morning');
@@ -956,13 +973,12 @@
     const amM = amReadings.length ? computeMetrics(amReadings) : null;
     const pmM = pmReadings.length ? computeMetrics(pmReadings) : null;
 
-    // Color by window status: green=at goal, amber=near goal, red=above
+    // Color by window status: green=at goal, red=above goal (matches chart legend)
     // Use rounded values so color matches what the clinician sees displayed
     function statusColor(avgSys, avgDia) {
       if (avgSys == null || avgDia == null) return { bg: '#e0e0e0', text: '#888', label: '—' };
       const s = Math.round(avgSys), d = Math.round(avgDia);
       if (s < goal.sys && d < goal.dia) return { bg: '#00C853', text: '#fff', label: 'At goal' };
-      if (s < goal.sys + 5 && d < goal.dia + 5) return { bg: '#FFB300', text: '#fff', label: 'Near goal' };
       return { bg: '#e53935', text: '#fff', label: 'Above goal' };
     }
     const amStatus = statusColor(rm.avgAmSys, rm.avgAmDia);
@@ -1240,9 +1256,12 @@
         amSBP: amRow.meanSBP, pmSBP: pmRow.meanSBP,
         amN: amRow.n, pmN: pmRow.n,
         green: allStats.green || 0,
+        red: allStats.red || 0,
         severe: allStats.severe || 0,
+        hypo: allStats.hypo || 0,
         holdCount: phaseHolds.length,
         days: phaseDays,
+        n: allReadingsPhase.length,
       });
     }
     if (phaseGroups.length < 2) { compContainer.innerHTML = ''; return; }
@@ -1257,28 +1276,58 @@
     const best = scored[0], worst = scored[scored.length - 1];
 
     // Find max values for highlighting
-    const maxGreen = Math.max(...scored.map(p => p.green));
-    const maxSevere = Math.max(...scored.map(p => p.severe));
     const maxHolds = Math.max(...scored.map(p => p.holdCount));
 
     let compHtml = '<div class="hr"></div>';
     compHtml += `<div style="font-weight:650; font-size:14px; margin-bottom:8px; color:var(--accent);">Treatment Plan Comparison <span style="font-weight:400; font-size:12px; color:#1a73e8;">· last ${recentWeeks} wk${recentWeeks>1?'s':''} per phase</span></div>`;
+
+    // Mini legend for stacked bar colors
+    compHtml += `<div style="display:flex; gap:14px; margin-bottom:8px; font-size:11px; color:var(--muted);">`;
+    compHtml += `<span><span style="display:inline-block;width:10px;height:10px;background:#7B1FA2;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Low</span>`;
+    compHtml += `<span><span style="display:inline-block;width:10px;height:10px;background:#00C853;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>At goal</span>`;
+    compHtml += `<span><span style="display:inline-block;width:10px;height:10px;background:#FF4444;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Above goal</span>`;
+    compHtml += `<span><span class="hatched-severe" style="display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Severe</span>`;
+    compHtml += `</div>`;
+
     compHtml += '<table class="phase-table" style="font-size:12px;"><thead><tr>';
-    compHtml += '<th>Regimen</th><th style="color:#1b7a3d;">% At Goal (+)</th><th style="color:#c62828;">% Severe (&minus;)</th><th style="color:#c62828;">Holds (&minus;)</th><th>Score</th><th>Rank</th>';
+    compHtml += '<th>Regimen</th><th style="min-width:200px;">Distribution of BP Readings</th><th style="color:#c62828;">Holds (&minus;)</th><th>Score</th><th>Rank</th>';
     compHtml += '</tr></thead><tbody>';
     scored.forEach((p, idx) => {
       const isBest = idx === 0;
       const isWorst = idx === scored.length - 1 && scored.length > 1;
       const rowBg = isBest ? 'background:rgba(0,200,100,.08);' : (isWorst && scored.length > 2) ? 'background:rgba(255,80,80,.06);' : '';
       const rankIcon = isBest ? ' \u{1F3C6}' : '';
-      // Highlight: green for best at-goal, red for worst severe/holds
-      const greenStyle = p.green === maxGreen ? 'color:#1b7a3d; font-weight:700;' : '';
-      const sevStyle = p.severe === maxSevere && p.severe > 0 ? 'color:#c62828; font-weight:700;' : '';
       const holdStyle = p.holdCount === maxHolds && p.holdCount > 0 ? 'color:#c62828; font-weight:700;' : '';
+
+      // Build stacked bar with percentage labels inside segments
+      const segments = [
+        { pct: p.hypo,   color: '#7B1FA2', label: 'Low' },
+        { pct: p.green,  color: '#00C853', label: 'Goal' },
+        { pct: p.red,    color: '#FF4444', label: 'Red' },
+        { pct: p.severe, color: '#FF0000', label: 'Sev', hatched: true },
+      ];
+
+      let barHtml = '<div style="display:flex; align-items:center; gap:6px;">';
+      barHtml += '<div class="kci-bar-track" style="height:22px; border-radius:4px; min-width:180px;">';
+      for (const seg of segments) {
+        if (seg.pct < 0.5) continue; // skip negligible segments
+        const rounded = Math.round(seg.pct);
+        // Show label inside if segment wide enough (>=12%), otherwise just show the segment
+        const showLabel = seg.pct >= 12;
+        const textColor = seg.color === '#00C853' ? 'rgba(0,0,0,.7)' : '#fff';
+        const hatchClass = seg.hatched ? ' hatched-severe' : '';
+        const bgStyle = seg.hatched ? '' : `background:${seg.color};`;
+        barHtml += `<div class="kci-bar-seg${hatchClass}" style="width:${seg.pct}%; ${bgStyle} display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:${textColor}; overflow:hidden; white-space:nowrap;">`;
+        if (showLabel) barHtml += `${rounded}%`;
+        barHtml += `</div>`;
+      }
+      barHtml += '</div>';
+      barHtml += `<span style="font-size:10px; color:var(--muted); white-space:nowrap;">n=${p.n}</span>`;
+      barHtml += '</div>';
+
       compHtml += `<tr style="${rowBg}">`;
       compHtml += `<td style="text-align:left; max-width:200px; word-break:break-word;">${p.label}</td>`;
-      compHtml += `<td style="${greenStyle}">${p.green.toFixed(0)}%</td>`;
-      compHtml += `<td style="${sevStyle}">${p.severe.toFixed(0)}%</td>`;
+      compHtml += `<td style="padding:4px 6px;">${barHtml}</td>`;
       compHtml += `<td style="${holdStyle}">${p.holdCount}</td>`;
       compHtml += `<td>${p.score.toFixed(1)}</td>`;
       compHtml += `<td style="font-weight:600;">#${idx + 1}${rankIcon}</td>`;
@@ -1589,7 +1638,7 @@
           `<b>Green (at goal):</b> SBP &lt; ${goal.sys} AND DBP &lt; ${goal.dia}`,
           `<b>Red (above goal):</b> SBP ${goal.sys}–${SEVERE_SBP_MIN-1} OR DBP ${goal.dia}–${SEVERE_DBP_MIN-1} (and not severe)`,
           `<b>Severe:</b> SBP ≥ ${SEVERE_SBP_MIN} OR DBP ≥ ${SEVERE_DBP_MIN}`,
-          `<b>Hypotensive:</b> SBP < ${HYPO_SBP_MAX} OR DBP < ${HYPO_DBP_MAX}`,
+          `<b>Low:</b> SBP < ${HYPO_SBP_MAX} OR DBP < ${HYPO_DBP_MAX}`,
           `<b>Goal target:</b> ${goal.sys}/${goal.dia} (current profile: ${$('profile').value})`,
         ]
       },
@@ -1681,7 +1730,7 @@
           `<b>At goal:</b> Mean SBP < ${goal.sys} AND mean DBP < ${goal.dia}`,
           `<b>Near goal:</b> Mean SBP < ${goal.sys+5} AND mean DBP < ${goal.dia+5}`,
           `<b>Low severe burden:</b> < 5% severe readings in most recent phase`,
-          `<b>Treatment plan comparison:</b> On the Medication Response tab. Score = (%at goal) − (%severe) − 5 × (holds/month). Higher = better. Green column = positive factor, red columns = negative factors. If best regimen ≠ current, warns for re-evaluation`,
+          `<b>Treatment plan comparison:</b> On the Medication Response tab. Each regimen row shows a stacked distribution bar (Low/At Goal/Above Goal/Severe) using the same color coding as the Timeline legend, making tier-shifting between adjacent categories immediately visible. Holds column, Score = (%at goal) − (%severe) − 5 × (holds/month). Higher = better. If best regimen ≠ current, warns for re-evaluation`,
           `<b>Treatment plan comparison — data windows:</b> All phases use the same window: the most recent ${recentWeeks} week(s) of readings before the phase ended (or before today for the current phase). This ensures an apples-to-apples comparison across regimens. Configurable via "Recent window (wks)" in the settings bar`,
         ]
       },
@@ -1698,7 +1747,7 @@
         title: 'KPI Dashboard',
         rules: [
           `<b>Recent window:</b> last ${recentWeeks} week(s) from the end of the selected date range (configurable, shared with current phase)`,
-          `<b>Color coding:</b> SBP/DBP values color-coded by classification (green/red/severe/hypo)`,
+          `<b>Color coding:</b> SBP/DBP values color-coded by classification (green/red/severe/low)`,
         ]
       },
       {
