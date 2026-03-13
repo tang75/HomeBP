@@ -1,0 +1,19 @@
+# Data files — do not commit patient data
+*.xlsx
+*.xls
+*.csv
+*.pdf
+*.png
+*.py
+*.txt
+
+# OS files
+.DS_Store
+~$*
+
+# Claude/IDE
+.claude/
+
+# Test data
+test_*
+files-*/
