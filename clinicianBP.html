@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>HomeBP Insight — Timeline</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="bp-core.js?v=2"></script>
+  <script src="bp-core.js?v=3"></script>
   <style>
     :root { --bg:#ffffff; --card:#ffffff; --muted:#5a6a7a; --text:#1a1a2e; --accent:#2c5dcd; --warn:#b87800; --danger:#c62828; --ok:#1b7a3d; --canvas-bg:#ffffff; }
     *{box-sizing:border-box;}
@@ -834,8 +834,10 @@
     canvas.onmousemove=e=>{
       if(!rs.length){tip.style.display='none';return;}
       const rect=canvas.getBoundingClientRect();
-      const dpr=window.devicePixelRatio||1;
       const mx=(e.clientX-rect.left);
+      const my=(e.clientY-rect.top);
+      // Only show tooltip when mouse is within the plot area
+      if(mx<PAD.l||mx>rect.width-PAD.r||my<PAD.t||my>rect.height-PAD.b){tip.style.display='none';return;}
       const xOf=t=>PAD.l+((t-xMinMs)/Math.max(1,xMaxMs-xMinMs))*plotW();
       let best=null,bestD=Infinity;
       for(const r of rs){const dx=mx-xOf(r.t.getTime());const d=dx*dx;if(d<bestD){bestD=d;best=r;}}
@@ -853,7 +855,8 @@
         compHtml += `<div style="font-weight:600;margin-bottom:1px;">Averaged from ${best.components.length} readings:</div>`;
         for (const c of best.components) {
           const timeStr = c.t.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-          compHtml += `<div>${timeStr} \u2014 ${fmtBP(c.sys,c.dia)}${c.hr!=null?' \u2022 HR '+c.hr:''}</div>`;
+          const cNotes = (c.notes||'').replace(/[;\-\u2014\u2013\s]+/g,' ').trim();
+          compHtml += `<div>${timeStr} \u2014 ${fmtBP(c.sys,c.dia)}${c.hr!=null?' \u2022 HR '+c.hr:''}${cNotes?' \u2022 <span style="font-style:italic;">'+cNotes+'</span>':''}</div>`;
         }
         compHtml += '</div>';
       }

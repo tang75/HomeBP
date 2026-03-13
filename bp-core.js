@@ -266,7 +266,7 @@ const BPCore = (() => {
           green: cls.green, red: cls.red, severe: cls.severe, hypo: cls.hypo,
           dateOnly: new Date(midTime.getFullYear(), midTime.getMonth(), midTime.getDate()),
           mergedCount: group.length,
-          components: group.map(r => ({ t: r.t, sys: r.sys, dia: r.dia, hr: r.hr })),
+          components: group.map(r => ({ t: r.t, sys: r.sys, dia: r.dia, hr: r.hr, notes: r.notes })),
         });
       }
       i = j;
