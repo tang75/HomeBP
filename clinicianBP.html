@@ -974,12 +974,13 @@
     const amM = amReadings.length ? computeMetrics(amReadings) : null;
     const pmM = pmReadings.length ? computeMetrics(pmReadings) : null;
 
-    // Color by window status: green=at goal, red=above goal (matches chart legend)
+    // Color by window status: green=at goal, amber=near goal (within 2mmHg), red=above goal
     // Use rounded values so color matches what the clinician sees displayed
     function statusColor(avgSys, avgDia) {
       if (avgSys == null || avgDia == null) return { bg: '#e0e0e0', text: '#888', label: '—' };
       const s = Math.round(avgSys), d = Math.round(avgDia);
       if (s < goal.sys && d < goal.dia) return { bg: '#00C853', text: '#fff', label: 'At goal' };
+      if (s < goal.sys + 2 && d < goal.dia + 2) return { bg: '#F9A825', text: '#fff', label: 'Near goal' };
       return { bg: '#e53935', text: '#fff', label: 'Above goal' };
     }
     const amStatus = statusColor(rm.avgAmSys, rm.avgAmDia);
@@ -1515,7 +1516,7 @@
     const rSBP = statusSBP != null ? Math.round(statusSBP) : null;
     const rDBP = statusDBP != null ? Math.round(statusDBP) : null;
     const statusAtGoal   = rSBP != null && rSBP < goal.sys && rDBP < goal.dia;
-    const statusNearGoal = rSBP != null && rSBP < goal.sys + 5 && rDBP < goal.dia + 5;
+    const statusNearGoal = rSBP != null && rSBP < goal.sys + 2 && rDBP < goal.dia + 2;
 
     let statusClass, badgeClass, statusLabel;
     if (statusAtGoal && statusSev < 5) {
@@ -1722,7 +1723,7 @@
         title: 'Clinical Insights Dashboard',
         rules: [
           `<b>Layout:</b> Visual card dashboard — 2 cards`,
-          `<b>Card 1 (Current Status):</b> Always shown (full width). Color-coded badge: green = AT TARGET (mean SBP < ${goal.sys} AND DBP < ${goal.dia}), amber = NEAR TARGET (mean SBP < ${goal.sys+5} AND DBP < ${goal.dia+5}), red = ABOVE TARGET. Shows current mean BP and active regimen`,
+          `<b>Card 1 (Current Status):</b> Always shown (full width). Color-coded badge: green = AT TARGET (mean SBP < ${goal.sys} AND DBP < ${goal.dia}), amber = NEAR TARGET (within 2 mmHg: SBP < ${goal.sys+2} AND DBP < ${goal.dia+2}), red = ABOVE TARGET. Shows current mean BP and active regimen`,
           `<b>Card 2 (Circadian Pattern):</b> Full width. Shown if AM ≥ 5 AND PM ≥ 5 readings. Proportion bars (green/red/severe) with labeled mini-legend and hatched severe icon, Mean BP column, HR by window (if ≥ 3 readings per window), circadian delta annotation`,
           `<b>Phase data:</b> ${N} readings per phase, ${lookbackMonths}-month lookback, most recent ${recentWeeks} week(s). Minimum n ≥ 3 for a phase to be validated`,
         ]
@@ -1751,6 +1752,7 @@
         rules: [
           `<b>Recent window:</b> last ${recentWeeks} week(s) from the end of the selected date range (configurable, shared with current phase)`,
           `<b>Color coding:</b> SBP/DBP values color-coded by classification (green/red/severe/low)`,
+          `<b>Window status colors:</b> Green = At Goal (mean < ${goal.sys}/${goal.dia}), Amber = Near Goal (within 2 mmHg: mean < ${goal.sys+2}/${goal.dia+2}), Red = Above Goal. This applies to dashboard KPI boxes and Clinical Insights badge only — not to individual BP reading bars on the chart`,
         ]
       },
       {
