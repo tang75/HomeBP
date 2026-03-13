@@ -949,6 +949,17 @@
   // =============================================
   // KPIs
   // =============================================
+  // Color by window status: green=at goal, amber=near goal (within 2mmHg), red=above goal
+  // Use rounded values so color matches what the clinician sees displayed
+  function statusColor(avgSys, avgDia) {
+    if (avgSys == null || avgDia == null) return { bg: '#e0e0e0', text: '#888', label: '—' };
+    const g = getGoal();
+    const s = Math.round(avgSys), d = Math.round(avgDia);
+    if (s < g.sys && d < g.dia) return { bg: '#00C853', text: '#fff', label: 'At goal' };
+    if (s < g.sys + 2 && d < g.dia + 2) return { bg: '#F9A825', text: '#fff', label: 'Near goal' };
+    return { bg: '#e53935', text: '#fff', label: 'Above goal' };
+  }
+
   function renderKPIs(m, rs) {
     // Compute most recent N-week stats (configurable, default 4 weeks)
     const recentWeeks = Math.max(1, +$('phaseRecentWeeks').value || 2);
@@ -974,15 +985,6 @@
     const amM = amReadings.length ? computeMetrics(amReadings) : null;
     const pmM = pmReadings.length ? computeMetrics(pmReadings) : null;
 
-    // Color by window status: green=at goal, amber=near goal (within 2mmHg), red=above goal
-    // Use rounded values so color matches what the clinician sees displayed
-    function statusColor(avgSys, avgDia) {
-      if (avgSys == null || avgDia == null) return { bg: '#e0e0e0', text: '#888', label: '—' };
-      const s = Math.round(avgSys), d = Math.round(avgDia);
-      if (s < goal.sys && d < goal.dia) return { bg: '#00C853', text: '#fff', label: 'At goal' };
-      if (s < goal.sys + 2 && d < goal.dia + 2) return { bg: '#F9A825', text: '#fff', label: 'Near goal' };
-      return { bg: '#e53935', text: '#fff', label: 'Above goal' };
-    }
     const amStatus = statusColor(rm.avgAmSys, rm.avgAmDia);
     const pmStatus = statusColor(rm.avgPmSys, rm.avgPmDia);
 
@@ -995,7 +997,7 @@
     let barHtml = `<div style="display:flex; border-radius:10px; overflow:hidden; height:54px; font-size:12px; font-weight:600;">`;
     // AM half
     barHtml += `<div style="flex:${amPct}; background:${amStatus.bg}; color:${amStatus.text}; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 6px; min-width:80px;">`;
-    barHtml += `<div style="font-size:10px; opacity:.85; letter-spacing:.5px;">MORNING</div>`;
+    barHtml += `<div style="font-size:10px; opacity:.85; letter-spacing:.5px;">MORNING AVE</div>`;
     barHtml += `<div style="font-size:16px; font-weight:700;">${amM && amM.count > 0 ? fmtBP(rm.avgAmSys, rm.avgAmDia) : '—'}</div>`;
     barHtml += `<div style="font-size:9px; opacity:.75;">n=${amM ? amM.count : 0}</div>`;
     barHtml += `</div>`;
@@ -1003,7 +1005,7 @@
     barHtml += `<div style="width:2px; background:rgba(255,255,255,.4);"></div>`;
     // PM half
     barHtml += `<div style="flex:${pmPct}; background:${pmStatus.bg}; color:${pmStatus.text}; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 6px; min-width:80px;">`;
-    barHtml += `<div style="font-size:10px; opacity:.85; letter-spacing:.5px;">AFT / EVE</div>`;
+    barHtml += `<div style="font-size:10px; opacity:.85; letter-spacing:.5px;">AFT / EVE AVE</div>`;
     barHtml += `<div style="font-size:16px; font-weight:700;">${pmM && pmM.count > 0 ? fmtBP(rm.avgPmSys, rm.avgPmDia) : '—'}</div>`;
     barHtml += `<div style="font-size:9px; opacity:.75;">n=${pmM ? pmM.count : 0}</div>`;
     barHtml += `</div>`;
@@ -1580,6 +1582,7 @@
       html += `</div>`;
 
       // Morning row
+      const mornStatus = statusColor(mornMean, mornMeanDBP);
       html += `<div style="display:grid; grid-template-columns:${gridCols}; align-items:center; gap:6px; margin-bottom:5px;">`;
       html += `<span style="font-weight:600; font-size:13px;">Morning</span>`;
       html += `<div class="kci-bar-track">`;
@@ -1587,11 +1590,12 @@
       html += `<div class="kci-bar-seg" style="width:${mRed}%;background:#FF4444;"></div>`;
       html += `<div class="kci-bar-seg" style="width:${mSev}%;background:#FF0000;"></div>`;
       html += `</div>`;
-      html += `<span style="text-align:right; font-weight:700; font-size:14px;">${Math.round(mornMean)}/${Math.round(mornMeanDBP)}</span>`;
+      html += `<span style="text-align:right; font-weight:700; font-size:14px; color:${mornStatus.bg};">${Math.round(mornMean)}/${Math.round(mornMeanDBP)}</span>`;
       if (hasHR) html += `<span style="text-align:right; font-size:13px; color:var(--muted);">${amHRMean != null ? Math.round(amHRMean) + ' bpm' : '—'}</span>`;
       html += `</div>`;
 
       // Afternoon/Evening row
+      const aeStatus = statusColor(aeMean, aeMeanDBP);
       html += `<div style="display:grid; grid-template-columns:${gridCols}; align-items:center; gap:6px; margin-bottom:5px;">`;
       html += `<span style="font-weight:600; font-size:13px;">Aft/Eve</span>`;
       html += `<div class="kci-bar-track">`;
@@ -1599,7 +1603,7 @@
       html += `<div class="kci-bar-seg" style="width:${aRed}%;background:#FF4444;"></div>`;
       html += `<div class="kci-bar-seg" style="width:${aSev}%;background:#FF0000;"></div>`;
       html += `</div>`;
-      html += `<span style="text-align:right; font-weight:700; font-size:14px;">${Math.round(aeMean)}/${Math.round(aeMeanDBP)}</span>`;
+      html += `<span style="text-align:right; font-weight:700; font-size:14px; color:${aeStatus.bg};">${Math.round(aeMean)}/${Math.round(aeMeanDBP)}</span>`;
       if (hasHR) html += `<span style="text-align:right; font-size:13px; color:var(--muted);">${pmHRMean != null ? Math.round(pmHRMean) + ' bpm' : '—'}</span>`;
       html += `</div>`;
 

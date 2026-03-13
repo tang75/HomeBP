@@ -785,7 +785,7 @@
     let barHtml = `<div style="display:flex; border-radius:12px; overflow:hidden; height:72px; font-size:16px; font-weight:600;">`;
     // AM half
     barHtml += `<div style="flex:${amPct}; background:${amStatus.bg}; color:${amStatus.text}; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6px 8px; min-width:100px;">`;
-    barHtml += `<div style="font-size:14px; opacity:.85; letter-spacing:.5px; font-weight:700;">MORNING</div>`;
+    barHtml += `<div style="font-size:14px; opacity:.85; letter-spacing:.5px; font-weight:700;">MORNING AVE</div>`;
     barHtml += `<div style="font-size:22px; font-weight:750;">${amReadings.length > 0 ? fmtBP(amAvgSys, amAvgDia) : '\u2014'}</div>`;
     barHtml += `<div style="font-size:13px; opacity:.8; font-weight:600;">n=${amReadings.length}</div>`;
     barHtml += `</div>`;
@@ -793,7 +793,7 @@
     barHtml += `<div style="width:2px; background:rgba(255,255,255,.4);"></div>`;
     // PM half
     barHtml += `<div style="flex:${pmPct}; background:${pmStatus.bg}; color:${pmStatus.text}; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:6px 8px; min-width:100px;">`;
-    barHtml += `<div style="font-size:14px; opacity:.85; letter-spacing:.5px; font-weight:700;">AFT / EVE</div>`;
+    barHtml += `<div style="font-size:14px; opacity:.85; letter-spacing:.5px; font-weight:700;">AFT / EVE AVE</div>`;
     barHtml += `<div style="font-size:22px; font-weight:750;">${pmReadings.length > 0 ? fmtBP(pmAvgSys, pmAvgDia) : '\u2014'}</div>`;
     barHtml += `<div style="font-size:13px; opacity:.8; font-weight:600;">n=${pmReadings.length}</div>`;
     barHtml += `</div>`;
