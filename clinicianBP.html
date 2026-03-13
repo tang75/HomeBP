@@ -1782,7 +1782,7 @@
 
     let xMinMs, xMaxMs;
     if(rs.length){
-      xMinMs=rs[0].t.getTime();
+      xMinMs=rs[0].t.getTime()-12*3600000;
       xMaxMs=rs[rs.length-1].t.getTime()+12*3600000;
     } else {
       const now=Date.now();
