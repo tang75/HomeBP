@@ -1163,7 +1163,7 @@
     let html = '<table class="phase-table"><thead><tr>';
     html += '<th>Phase</th><th>Statistics Window</th><th>Time of Day</th>';
     html += '<th>Mean SBP</th><th>&Delta; SBP</th><th>Mean DBP</th><th>&Delta; DBP</th>';
-    html += '<th>% Green</th><th>&Delta; pp</th><th>% Red</th><th>&Delta; pp</th><th>% Severe</th><th>&Delta; pp</th><th>N</th><th># Holds</th>';
+    html += '<th>% Green</th><th>&Delta; Grn pp</th><th>% Red</th><th>&Delta; Red pp</th><th>% Severe</th><th>&Delta; Sev pp</th><th>N</th><th># Holds</th>';
     html += '</tr></thead><tbody>';
 
     for (let i = 0; i < tableRows.length; i++) {
@@ -1216,7 +1216,7 @@
         const goodDir = invertColor ? (val <= -3) : (val >= 3);
         const badDir = invertColor ? (val >= 3) : (val <= -3);
         const color = goodDir ? 'var(--ok)' : badDir ? 'var(--danger)' : 'var(--muted)';
-        return `<span style="color:${color}">${val >= 0 ? '+' : ''}${val.toFixed(1)}%</span>`;
+        return `<span style="color:${color}">${val >= 0 ? '+' : ''}${val.toFixed(1)}pp</span>`;
       };
       const fmtDeltaBP = (val) => {
         if (val == null) return '—';
