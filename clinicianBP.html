@@ -1691,25 +1691,25 @@
   const REFS = {
     'SPRINT':        { short: 'SPRINT 2015', pmid: '26551272', title: 'SPRINT Research Group. N Engl J Med 2015' },
     'Lancet2016':    { short: 'Ettehad 2016', pmid: '26559744', title: 'Ettehad et al. Lancet 2016 meta-analysis' },
-    'PROGRESS':      { short: 'PROGRESS 2001', pmid: '11588133', title: 'PROGRESS Collaborative Group. Lancet 2001' },
+    'PROGRESS':      { short: 'PROGRESS 2001', pmid: '11589932', title: 'PROGRESS Collaborative Group. Lancet 2001' },
     'UKPDS':         { short: 'UKPDS 38, 1998', pmid: '9742976', title: 'UKPDS Group. BMJ 1998' },
-    'SPRINT-CKD':    { short: 'Cheung 2017', pmid: '28352679', title: 'Cheung et al. J Am Soc Nephrol 2017 (SPRINT-CKD)' },
+    'SPRINT-CKD':    { short: 'Cheung 2017', pmid: '28642330', title: 'Cheung et al. J Am Soc Nephrol 2017 (SPRINT-CKD)' },
     'KDIGO':         { short: 'KDIGO 2021', pmid: '33637192', title: 'KDIGO 2021 BP Guideline. Kidney Int 2021' },
     'SAVE':          { short: 'SAVE 1992', pmid: '1386652', title: 'Pfeffer et al. N Engl J Med 1992' },
     'VALIANT':       { short: 'VALIANT 2003', pmid: '14610160', title: 'Pfeffer et al. N Engl J Med 2003' },
     'ALLHAT':        { short: 'ALLHAT 2002', pmid: '12479763', title: 'ALLHAT Officers. JAMA 2002' },
     'HOPE':          { short: 'HOPE 2000', pmid: '10639539', title: 'Yusuf et al. N Engl J Med 2000' },
-    'Kario':         { short: 'Kario 2003', pmid: '12566146', title: 'Kario et al. Circulation 2003' },
+    'Kario':         { short: 'Kario 2003', pmid: '12642361', title: 'Kario et al. Circulation 2003' },
     'Rothwell':      { short: 'Rothwell 2010', pmid: '20226988', title: 'Rothwell et al. Lancet 2010' },
-    'MAPEC':         { short: 'Hermida 2010', pmid: '20479559', title: 'Hermida et al. Chronobiol Int 2010 (MAPEC)' },
+    'MAPEC':         { short: 'Hermida 2010', pmid: '20854139', title: 'Hermida et al. Chronobiol Int 2010 (MAPEC)' },
     'Hygia':         { short: 'Hermida 2020', pmid: '31641769', title: 'Hermida et al. Eur Heart J 2020 (Hygia)' },
     'PATHWAY2':      { short: 'PATHWAY-2 2015', pmid: '26414968', title: 'Williams et al. Lancet 2015' },
-    'CIBIS2':        { short: 'CIBIS-II 1999', pmid: '9920355', title: 'CIBIS-II Investigators. Lancet 1999' },
+    'CIBIS2':        { short: 'CIBIS-II 1999', pmid: '10023943', title: 'CIBIS-II Investigators. Lancet 1999' },
     'COPERNICUS':    { short: 'COPERNICUS 2001', pmid: '11386263', title: 'Packer et al. N Engl J Med 2001' },
     'MERITHF':       { short: 'MERIT-HF 1999', pmid: '10376614', title: 'MERIT-HF Study Group. Lancet 1999' },
-    'NonDipping':    { short: 'Ohkubo 2002', pmid: '12186657', title: 'Ohkubo et al. Arch Intern Med 2002' },
-    'ISH':           { short: 'SHEP 1991', pmid: '2046253', title: 'SHEP Cooperative Research Group. JAMA 1991' },
-    'JCurve':        { short: 'Messerli 2006', pmid: '16785335', title: 'Messerli et al. J Am Coll Cardiol 2006 (J-curve)' },
+    'NonDipping':    { short: 'Ohkubo 2002', pmid: '12409956', title: 'Ohkubo et al. J Hypertens 2002' },
+    'ISH':           { short: 'SHEP 1991', pmid: '2046107', title: 'SHEP Cooperative Research Group. JAMA 1991' },
+    'JCurve':        { short: 'Cruickshank 1988', pmid: '3145062', title: 'Cruickshank et al. BMJ 1988 (J-curve)' },
     'AHA2017':       { short: 'AHA/ACC 2017', pmid: '29133356', title: 'Whelton et al. Hypertension 2018 (AHA/ACC Guideline)' },
   };
   function cite(key) {
@@ -1891,7 +1891,7 @@
     const totalDays = d.rs.length > 1 ? Math.round(daysBetween(d.rs[0].t, d.rs[d.rs.length-1].t)) : 1;
     if (totalHolds >= 3) {
       const holdRate = (totalHolds / totalDays * 30).toFixed(1);
-      insights.push({ category: 'Past Regimen Observations', priority: 3, icon: '⏸️',
+      insights.push({ category: 'Past Medication Insights', priority: 3, icon: '⏸️',
         text: `<b>Frequent medication holds:</b> ${totalHolds} hold events over ${totalDays} days (~${holdRate}/month). Frequent holds disrupt steady-state drug levels and may contribute to BP variability. Investigate hold triggers (hypotension, bradycardia, procedures).` });
     }
 
@@ -2284,8 +2284,8 @@
 
     // Sort and render insights by category
     insights.sort((a, b) => a.priority - b.priority);
-    const categories = ['BP Patterns', 'Med Correlations', 'Past Regimen Observations', 'Personalization'];
-    const catLabels = { 'BP Patterns': '📊 BP Pattern Insights', 'Med Correlations': '💊 Medication–BP Correlations', 'Past Regimen Observations': '📋 Past Regimen Observations', 'Personalization': '👤 Personalization' };
+    const categories = ['BP Patterns', 'Med Correlations', 'Past Medication Insights', 'Personalization'];
+    const catLabels = { 'BP Patterns': '📊 BP Pattern Insights', 'Med Correlations': '💊 Medication–BP Correlations', 'Past Medication Insights': '📋 Past Medication Insights', 'Personalization': '👤 Personalization' };
     for (const cat of categories) {
       const items = insights.filter(i => i.category === cat);
       if (!items.length) continue;
