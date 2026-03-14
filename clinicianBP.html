@@ -211,7 +211,7 @@
         </select>
       </div>
       <div class="pill" id="customGoalPill" style="display:none">
-        <label style="font-weight:700;">Custom</label>
+        <label style="font-weight:700;">Custom Goal</label>
         <input id="goalSys" type="number" value="135" style="width:70px" />
         <span class="muted small">/</span>
         <input id="goalDia" type="number" value="85" style="width:70px" />
@@ -1991,21 +1991,18 @@
     const isCustom = prof === 'custom';
     const isNonDefault = prof !== 'us';
 
-    // Show/hide custom inputs
-    customPill.style.display = isCustom ? 'inline-flex' : 'none';
-
     if (isCustom) {
-      // Custom: strong amber highlight on both pills
+      // Custom: show custom inputs, amber highlight on both pills
       goalPill.style.cssText = 'display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; border:2px solid #E65100; background:rgba(230,81,0,.10);';
       customPill.style.cssText = 'display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; border:2px solid #E65100; background:rgba(230,81,0,.10);';
     } else if (isNonDefault) {
-      // WHO or other non-default: blue highlight
+      // WHO or other non-default: blue highlight on goal pill, hide custom
       goalPill.style.cssText = 'display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; border:2px solid #1565C0; background:rgba(21,101,192,.10);';
-      customPill.style.cssText = '';
+      customPill.style.cssText = 'display:none;';
     } else {
-      // US default: normal styling
+      // US default: normal styling, hide custom
       goalPill.style.cssText = '';
-      customPill.style.cssText = '';
+      customPill.style.cssText = 'display:none;';
     }
   }
 
