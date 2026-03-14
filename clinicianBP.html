@@ -1993,9 +1993,9 @@
     const isNonDefault = prof !== 'us';
 
     if (isCustom) {
-      // Custom: show custom inputs, strong red/amber highlight — must not be missed
-      goalPill.style.cssText = 'display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; border:2px solid #C62828; background:rgba(198,40,40,.10);';
-      customPill.style.cssText = 'display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; border:2px solid #C62828; background:rgba(198,40,40,.10);';
+      // Custom: show custom inputs, strong red fill — must not be missed
+      goalPill.style.cssText = 'display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; background:rgba(198,40,40,.18);';
+      customPill.style.cssText = 'display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; background:rgba(198,40,40,.18);';
     } else {
       // Standard (US/WHO): darker blue background, no outline — always visible
       goalPill.style.cssText = 'display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; background:rgba(21,101,192,.18);';
