@@ -288,6 +288,7 @@
       <div class="legend-bar">
         <div class="legend-item"><span class="legend-swatch" style="background:#7B1FA2"></span> Low: SBP &lt;100 or DBP &lt;60</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#00C853"></span> Green: SBP &lt;140 AND DBP &lt;90</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#F9A825"></span> Near Goal: within 2 mmHg of goal</div>
         <div class="legend-item"><span class="legend-swatch" style="background:#FF4444"></span> Red: SBP 140–159 or DBP 90–99</div>
         <div class="legend-item"><span style="display:inline-block;width:16px;height:12px;border-radius:3px;vertical-align:middle;"><svg width="16" height="12" xmlns="http://www.w3.org/2000/svg"><rect width="16" height="12" rx="2" fill="#FF0000"/><line x1="0" y1="12" x2="12" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="4" y1="12" x2="16" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="8" y1="12" x2="20" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/><line x1="-4" y1="12" x2="8" y2="0" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/></svg></span> Severe: SBP &ge;160 or DBP &ge;100</div>
         <div class="legend-item"><span style="display:inline-block;width:18px;height:2px;background:#8a8a8a;vertical-align:middle;"></span> Heart Rate</div>
@@ -1129,10 +1130,17 @@
         unifiedDateLabel = `${fmtDateShort(allReadings[0].t)} – ${fmtDateShort(allReadings[allReadings.length-1].t)}`;
       }
 
-      // Count holds in this phase
+      // Count holds in this phase, split by time-of-day window
       const phaseStart = boundaries[bi].date;
       const phaseEnd = isLast ? new Date(rs[rs.length-1].t.getTime() + 86400000) : boundaries[bi+1].date;
-      const phaseHoldCount = holdEvents.filter(h => h.getTime() >= phaseStart.getTime() && h.getTime() < phaseEnd.getTime()).length;
+      const phaseHolds = holdEvents.filter(h => h.getTime() >= phaseStart.getTime() && h.getTime() < phaseEnd.getTime());
+      const amStart = +$('amStart').value, amEnd = +$('amEnd').value;
+      const holdsByWindow = { Morning: 0, 'Afternoon/Evening': 0 };
+      for (const h of phaseHolds) {
+        const hr = h.getHours();
+        if (hr >= amStart && hr < amEnd) holdsByWindow['Morning']++;
+        else holdsByWindow['Afternoon/Evening']++;
+      }
 
       for (const w of windows) {
         const s = phaseStatsFromReadings(subsets[w]);
@@ -1141,7 +1149,7 @@
         const d_sev = (prev[w] && s.severe != null && prev[w].severe != null) ? s.severe - prev[w].severe : null;
         const d_green = (prev[w] && s.green != null && prev[w].green != null) ? s.green - prev[w].green : null;
         const d_red = (prev[w] && s.red != null && prev[w].red != null) ? s.red - prev[w].red : null;
-        tableRows.push({ phase: phaseLabel, dateLabel: unifiedDateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev, d_green, d_red, isRecent: isLast, holdCount: phaseHoldCount });
+        tableRows.push({ phase: phaseLabel, dateLabel: unifiedDateLabel, window: w, ...s, d_mean, d_meanDBP, d_sev, d_green, d_red, isRecent: isLast, holdCount: holdsByWindow[w] || 0 });
         prev[w] = s;
       }
     }
@@ -1232,12 +1240,8 @@
       html += `<td>${fmtPct(r.green)}</td><td>${fmtDelta(r.d_green, false)}</td>`;
       html += `<td>${fmtPct(r.red)}</td><td>${fmtDelta(r.d_red, true)}</td>`;
       html += `<td>${fmtPct(r.severe)}</td><td>${fmtDelta(r.d_sev, true)}</td>`;
-      // Show hold count — use rowspan on the Morning row to span both AM/PM
-      const isMorningRow = r.window === 'Morning';
-      if (isMorningRow) {
-        const holdStyle = r.holdCount > 0 ? 'color:#c62828; font-weight:700;' : '';
-        html += `<td rowspan="2" style="vertical-align:middle; text-align:center; ${holdStyle}">${r.holdCount}</td>`;
-      }
+      const holdStyle = r.holdCount > 0 ? 'color:#c62828; font-weight:700;' : '';
+      html += `<td style="text-align:center; ${holdStyle}">${r.holdCount}</td>`;
       html += `<td>${r.n}</td>`;
       html += `</tr>`;
     }
@@ -1267,12 +1271,18 @@
         return BPCore.getRecentReadingsBeforeDate(rs, boundaries[bi + 1].date, recentWeeks, 'All');
       })()];
       const allStats = phaseStatsFromReadings(allReadingsPhase);
+      const gp = getGoal();
+      const isNearGoal = r => !r.green && !r.severe && !r.hypo && r.sys < gp.sys + 2 && r.dia < gp.dia + 2;
+      const nearPct = allReadingsPhase.length ? 100 * allReadingsPhase.filter(isNearGoal).length / allReadingsPhase.length : 0;
+      // Red excluding near-goal to avoid double-counting
+      const redAdj = allReadingsPhase.length ? 100 * allReadingsPhase.filter(r => r.red && !isNearGoal(r)).length / allReadingsPhase.length : 0;
       phaseGroups.push({
         label: amRow.phase,
         amSBP: amRow.meanSBP, pmSBP: pmRow.meanSBP,
         amN: amRow.n, pmN: pmRow.n,
         green: allStats.green || 0,
-        red: allStats.red || 0,
+        near: nearPct,
+        red: redAdj,
         severe: allStats.severe || 0,
         hypo: allStats.hypo || 0,
         holdCount: phaseHolds.length,
@@ -1301,6 +1311,7 @@
     compHtml += `<div style="display:flex; gap:14px; margin-bottom:8px; font-size:11px; color:var(--muted);">`;
     compHtml += `<span><span style="display:inline-block;width:10px;height:10px;background:#7B1FA2;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Low</span>`;
     compHtml += `<span><span style="display:inline-block;width:10px;height:10px;background:#00C853;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>At goal</span>`;
+    compHtml += `<span><span style="display:inline-block;width:10px;height:10px;background:#F9A825;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Near goal</span>`;
     compHtml += `<span><span style="display:inline-block;width:10px;height:10px;background:#FF4444;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Above goal</span>`;
     compHtml += `<span><span class="hatched-severe" style="display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:3px;"></span>Severe</span>`;
     compHtml += `</div>`;
@@ -1321,6 +1332,7 @@
       const segments = [
         { pct: p.hypo,   color: '#7B1FA2', label: 'Low' },
         { pct: p.green,  color: '#00C853', label: 'Goal' },
+        { pct: p.near,   color: '#F9A825', label: 'Near' },
         { pct: p.red,    color: '#FF4444', label: 'Red' },
         { pct: p.severe, color: '#FF0000', label: 'Sev', hatched: true },
       ];
@@ -1821,12 +1833,14 @@
     const legendBar = document.querySelector('#tab-timeline .legend-bar');
     if (!legendBar) return;
     const items = legendBar.querySelectorAll('.legend-item');
-    // Update Green legend (2nd item)
+    // Update Green legend (2nd item, index 1)
     if (items[1]) items[1].innerHTML = `<span class="legend-swatch" style="background:#00C853"></span> Green: SBP &lt;${goal.sys} AND DBP &lt;${goal.dia}`;
-    // Update Red legend (3rd item)
-    if (items[2]) items[2].innerHTML = `<span class="legend-swatch" style="background:#FF4444"></span> Red: SBP ${goal.sys}\u2013${SEVERE_SBP_MIN-1} or DBP ${goal.dia}\u2013${SEVERE_DBP_MIN-1}`;
-    // Update Target legend (6th item)
-    if (items[5]) items[5].innerHTML = `<span style="display:inline-block;width:18px;height:0;border-top:2px dashed #888;vertical-align:middle;"></span> Targets (SBP &lt;${goal.sys}, DBP &lt;${goal.dia})`;
+    // Update Near Goal legend (3rd item, index 2)
+    if (items[2]) items[2].innerHTML = `<span class="legend-swatch" style="background:#F9A825"></span> Near Goal: within 2 mmHg (&lt;${goal.sys+2}/${goal.dia+2})`;
+    // Update Red legend (4th item, index 3)
+    if (items[3]) items[3].innerHTML = `<span class="legend-swatch" style="background:#FF4444"></span> Red: SBP ${goal.sys}\u2013${SEVERE_SBP_MIN-1} or DBP ${goal.dia}\u2013${SEVERE_DBP_MIN-1}`;
+    // Update Target legend (7th item, index 6)
+    if (items[6]) items[6].innerHTML = `<span style="display:inline-block;width:18px;height:0;border-top:2px dashed #888;vertical-align:middle;"></span> Targets (SBP &lt;${goal.sys}, DBP &lt;${goal.dia})`;
 
     // Update phase legend too
     const phaseLegendItems = document.querySelectorAll('#phaseLegend .legend-item');
