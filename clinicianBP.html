@@ -165,7 +165,33 @@
       .kci-pill{ -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact; }
       #tab-phases{ page-break-before:always; }
       #tab-insights{ page-break-before:always; }
+      .profile-body{ display:none !important; }
+      .profile-panel{ border:none; background:none; margin-bottom:4px; }
+      .profile-header{ padding:2px 8px; }
     }
+    /* Patient Profile Panel */
+    .profile-panel{ border:1px solid rgba(0,0,0,.10); border-radius:12px; background:rgba(0,0,0,.015); margin-bottom:14px; overflow:hidden; }
+    .profile-header{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px; cursor:pointer; user-select:none; }
+    .profile-header:hover{ background:rgba(0,0,0,.03); }
+    .profile-title{ font-weight:650; font-size:13px; display:flex; align-items:center; gap:8px; }
+    .profile-badge{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
+    .profile-badge.loaded{ background:rgba(27,122,61,.12); color:#1b7a3d; }
+    .profile-badge.empty{ background:rgba(0,0,0,.06); color:var(--muted); }
+    .profile-chevron{ transition:transform .2s; font-size:14px; color:var(--muted); }
+    .profile-panel.open .profile-chevron{ transform:rotate(180deg); }
+    .profile-body{ display:none; padding:0 14px 14px; }
+    .profile-panel.open .profile-body{ display:block; }
+    .profile-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px 16px; }
+    .profile-section-title{ font-weight:650; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin:10px 0 4px; grid-column:1/-1; border-bottom:1px solid rgba(0,0,0,.06); padding-bottom:3px; }
+    .profile-field label{ font-size:11px; font-weight:600; color:var(--muted); display:block; margin-bottom:2px; }
+    .profile-field input[type="number"], .profile-field select, .profile-field input[type="text"]{ width:100%; font-size:12px; padding:4px 7px; border:1px solid #ccc; border-radius:6px; }
+    .profile-check{ display:flex; align-items:center; gap:6px; font-size:12px; padding:2px 0; }
+    .profile-check input[type="checkbox"]{ margin:0; }
+    .profile-check label{ cursor:pointer; }
+    .profile-sub-field{ margin-left:22px; margin-top:4px; display:none; }
+    .profile-actions{ display:flex; gap:8px; margin-top:12px; grid-column:1/-1; }
+    .profile-actions button{ font-size:12px; padding:5px 14px; border-radius:6px; cursor:pointer; border:1px solid #ccc; background:#fff; }
+    .profile-actions button.primary{ background:rgba(27,122,61,.12); border-color:rgba(27,122,61,.3); color:#1b7a3d; font-weight:600; }
   </style>
 </head>
 <body>
@@ -218,6 +244,7 @@
       </div>
       <button id="printBtn">Print / PDF</button>
       <button id="clearBtn" style="display:none;">Clear Data</button>
+      <button id="clearProfileBtn" style="display:none; color:#c62828;">Clear Patient Profile</button>
     </div>
     <div class="row" style="margin-top:6px; gap:6px; flex-wrap:wrap; align-items:center;">
       <span class="muted" style="font-size:11px; font-weight:600;">Statistics:</span>
@@ -345,6 +372,73 @@
         <span id="insightsRange" style="display:inline-block; font-size:12px; font-weight:600; background:#e8f0fe; color:#1a73e8; padding:3px 10px; border-radius:12px;">&mdash;</span>
       </div>
       <div class="hr"></div>
+      <!-- Patient Profile Panel -->
+      <div id="profilePanel" class="profile-panel">
+        <div class="profile-header" id="profileToggle">
+          <span class="profile-title">
+            👤 Patient Profile
+            <span id="profileBadge" class="profile-badge empty">Not set</span>
+          </span>
+          <span class="profile-chevron">&#x25BC;</span>
+        </div>
+        <div class="profile-body">
+          <div class="profile-grid">
+            <div class="profile-section-title">Demographics</div>
+            <div class="profile-field">
+              <label>Age</label>
+              <input type="number" id="ppAge" min="18" max="120" placeholder="—" />
+            </div>
+            <div class="profile-field">
+              <label>Sex</label>
+              <select id="ppSex"><option value="">— select —</option><option value="male">Male</option><option value="female">Female</option></select>
+            </div>
+            <div class="profile-field">
+              <label>Race / Ethnicity</label>
+              <select id="ppRace"><option value="">— select —</option><option value="black">Black / African American</option><option value="white">White</option><option value="hispanic">Hispanic / Latino</option><option value="asian">Asian</option><option value="other">Other</option></select>
+            </div>
+
+            <div class="profile-section-title">Comorbidities</div>
+            <div class="profile-check"><input type="checkbox" id="ppDiabetes" /><label for="ppDiabetes">Diabetes mellitus</label></div>
+            <div>
+              <div class="profile-check"><input type="checkbox" id="ppCKD" /><label for="ppCKD">Chronic kidney disease</label></div>
+              <div class="profile-sub-field" id="ppCKDSub">
+                <label style="font-size:11px; color:var(--muted);">eGFR (mL/min)</label>
+                <input type="number" id="ppEgfr" min="5" max="120" placeholder="—" style="width:80px; font-size:12px; padding:3px 6px; border:1px solid #ccc; border-radius:6px;" />
+              </div>
+            </div>
+            <div>
+              <div class="profile-check"><input type="checkbox" id="ppHF" /><label for="ppHF">Heart failure</label></div>
+              <div class="profile-sub-field" id="ppHFSub">
+                <select id="ppHFType" style="width:120px; font-size:12px; padding:3px 6px; border:1px solid #ccc; border-radius:6px;">
+                  <option value="">— type —</option><option value="hfref">HFrEF</option><option value="hfpef">HFpEF</option>
+                </select>
+              </div>
+            </div>
+            <div class="profile-check"><input type="checkbox" id="ppCAD" /><label for="ppCAD">CAD / Prior MI</label></div>
+            <div class="profile-check"><input type="checkbox" id="ppStroke" /><label for="ppStroke">Prior Stroke / TIA</label></div>
+            <div class="profile-check"><input type="checkbox" id="ppAfib" /><label for="ppAfib">Atrial fibrillation</label></div>
+
+            <div class="profile-section-title">Relevant Conditions</div>
+            <div class="profile-check"><input type="checkbox" id="ppAsthma" /><label for="ppAsthma">Asthma / COPD</label></div>
+            <div class="profile-check"><input type="checkbox" id="ppGout" /><label for="ppGout">Gout</label></div>
+            <div class="profile-check"><input type="checkbox" id="ppPregnancy" /><label for="ppPregnancy">Pregnancy / planning</label></div>
+            <div class="profile-check"><input type="checkbox" id="ppAngioedema" /><label for="ppAngioedema">History of angioedema</label></div>
+
+            <div class="profile-section-title">Drug Intolerances</div>
+            <div class="profile-check"><input type="checkbox" id="ppAceiCough" /><label for="ppAceiCough">ACEi cough</label></div>
+            <div class="profile-check"><input type="checkbox" id="ppCcbEdema" /><label for="ppCcbEdema">CCB edema</label></div>
+            <div class="profile-field" style="grid-column:span 2;">
+              <label>Other intolerances</label>
+              <input type="text" id="ppOther" placeholder="e.g., rash with HCTZ" />
+            </div>
+
+            <div class="profile-actions">
+              <button id="profileSaveBtn" class="primary">Save Profile</button>
+              <button id="profileClearBtn">Clear Profile</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="insightsContainer">
         <div class="muted">Upload data to see clinical insights.</div>
       </div>
@@ -425,6 +519,130 @@
   let readings = [];
   let medIntervals = {};
   let holdEvents = [];
+
+  // =============================================
+  // PATIENT PROFILE PERSISTENCE
+  // =============================================
+  const PROFILE_KEY = 'hbp_patient_profile';
+
+  function getDefaultProfile() {
+    return {
+      age:null, sex:null, race:null,
+      diabetes:false, ckd:false, ckdEgfr:null,
+      heartFailure:false, hfType:null,
+      cad:false, strokeTia:false, afib:false,
+      asthmaCopd:false, gout:false,
+      pregnancy:false, angioedemaHistory:false,
+      aceiCough:false, ccbEdema:false,
+      otherIntolerance:''
+    };
+  }
+
+  function readProfileFromForm() {
+    return {
+      age: $('ppAge').value ? +$('ppAge').value : null,
+      sex: $('ppSex').value || null,
+      race: $('ppRace').value || null,
+      diabetes: $('ppDiabetes').checked,
+      ckd: $('ppCKD').checked,
+      ckdEgfr: $('ppCKD').checked && $('ppEgfr').value ? +$('ppEgfr').value : null,
+      heartFailure: $('ppHF').checked,
+      hfType: $('ppHF').checked ? ($('ppHFType').value || null) : null,
+      cad: $('ppCAD').checked,
+      strokeTia: $('ppStroke').checked,
+      afib: $('ppAfib').checked,
+      asthmaCopd: $('ppAsthma').checked,
+      gout: $('ppGout').checked,
+      pregnancy: $('ppPregnancy').checked,
+      angioedemaHistory: $('ppAngioedema').checked,
+      aceiCough: $('ppAceiCough').checked,
+      ccbEdema: $('ppCcbEdema').checked,
+      otherIntolerance: $('ppOther').value.trim()
+    };
+  }
+
+  function populateFormFromProfile(p) {
+    $('ppAge').value = p.age ?? '';
+    $('ppSex').value = p.sex ?? '';
+    $('ppRace').value = p.race ?? '';
+    $('ppDiabetes').checked = !!p.diabetes;
+    $('ppCKD').checked = !!p.ckd;
+    $('ppEgfr').value = p.ckdEgfr ?? '';
+    $('ppCKDSub').style.display = p.ckd ? 'block' : 'none';
+    $('ppHF').checked = !!p.heartFailure;
+    $('ppHFType').value = p.hfType ?? '';
+    $('ppHFSub').style.display = p.heartFailure ? 'block' : 'none';
+    $('ppCAD').checked = !!p.cad;
+    $('ppStroke').checked = !!p.strokeTia;
+    $('ppAfib').checked = !!p.afib;
+    $('ppAsthma').checked = !!p.asthmaCopd;
+    $('ppGout').checked = !!p.gout;
+    $('ppPregnancy').checked = !!p.pregnancy;
+    $('ppAngioedema').checked = !!p.angioedemaHistory;
+    $('ppAceiCough').checked = !!p.aceiCough;
+    $('ppCcbEdema').checked = !!p.ccbEdema;
+    $('ppOther').value = p.otherIntolerance || '';
+  }
+
+  function isProfileSet(p) {
+    return p.age != null || p.sex != null || p.race != null ||
+      p.diabetes || p.ckd || p.heartFailure || p.cad ||
+      p.strokeTia || p.afib || p.asthmaCopd || p.gout ||
+      p.pregnancy || p.angioedemaHistory ||
+      p.aceiCough || p.ccbEdema || !!(p.otherIntolerance && p.otherIntolerance.length > 0);
+  }
+
+  function saveProfile() {
+    const p = readProfileFromForm();
+    try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch(e) {}
+    updateProfileBadge(p);
+    if (readings.length) { const rs = getRangeFiltered(); renderInsights(rs); }
+  }
+
+  function loadProfile() {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (raw) {
+        const p = { ...getDefaultProfile(), ...JSON.parse(raw) };
+        populateFormFromProfile(p);
+        updateProfileBadge(p);
+        return p;
+      }
+    } catch(e) {}
+    const def = getDefaultProfile();
+    updateProfileBadge(def);
+    return def;
+  }
+
+  function clearProfile() {
+    try { localStorage.removeItem(PROFILE_KEY); } catch(e) {}
+    const def = getDefaultProfile();
+    populateFormFromProfile(def);
+    updateProfileBadge(def);
+    if (readings.length) { const rs = getRangeFiltered(); renderInsights(rs); }
+  }
+
+  function updateProfileBadge(p) {
+    const badge = $('profileBadge');
+    const clearBtn = $('clearProfileBtn');
+    if (isProfileSet(p)) {
+      badge.textContent = 'Profile loaded';
+      badge.className = 'profile-badge loaded';
+      if (clearBtn) clearBtn.style.display = 'inline-block';
+    } else {
+      badge.textContent = 'Not set';
+      badge.className = 'profile-badge empty';
+      if (clearBtn) clearBtn.style.display = 'none';
+    }
+  }
+
+  function getPatientProfile() {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (raw) return { ...getDefaultProfile(), ...JSON.parse(raw) };
+    } catch(e) {}
+    return getDefaultProfile();
+  }
 
   // =============================================
   // MAPPING UI
@@ -1458,7 +1676,9 @@
   // =============================================
   function generateClinicalInsights(d) {
     const insights = [];   // { category, priority (1=highest), icon, text }
-    const treatments = []; // { text, rationale, confidence }
+    const treatments = []; // { text, rationale, confidence, preferred }
+    const p = d.profile || {};
+    const hasProfile = isProfileSet(p);
 
     // ── KNOWN DRUG CLASSES for mechanism-based reasoning ──
     const DRUG_CLASSES = {
@@ -1473,7 +1693,7 @@
     function classifyDrug(name) {
       const lower = name.toLowerCase();
       for (const [cls, info] of Object.entries(DRUG_CLASSES)) {
-        if (info.drugs.some(d => lower.includes(d))) return { class: cls, ...info };
+        if (info.drugs.some(dd => lower.includes(dd))) return { class: cls, ...info };
       }
       return { class: 'unknown', label: 'Unknown class', mechanism: '' };
     }
@@ -1493,33 +1713,53 @@
     const currentClassSet = new Set(Object.values(currentDrugClasses).map(c => c.class));
     const currentDrugNames = Object.keys(currentDrugClasses);
 
-    // ── 1. BP PATTERN INSIGHTS ──
-
-    // Severity assessment
+    // ══════════════════════════════════════════════
+    // 1. BP PATTERN INSIGHTS
+    // ══════════════════════════════════════════════
     const overallSBP = d.m.avgSys != null ? Math.round(d.m.avgSys) : null;
     const overallDBP = d.m.avgDia != null ? Math.round(d.m.avgDia) : null;
     const sevPct = d.m.pctSevere || 0;
     const greenPct = d.m.pctGreen || 0;
 
+    // 1a. Severity assessment with comorbidity-specific risk framing
     if (overallSBP != null) {
       const sbpOver = overallSBP - d.goal.sys;
       const dbpOver = overallDBP - d.goal.dia;
       if (sbpOver >= 20 || dbpOver >= 15) {
         insights.push({ category: 'BP Patterns', priority: 1, icon: '🔴',
-          text: `<b>Substantially above target:</b> Mean ${overallSBP}/${overallDBP} is ${sbpOver > 0 ? '+' + sbpOver : sbpOver}/${dbpOver > 0 ? '+' + dbpOver : dbpOver} mmHg above goal (${d.goal.sys}/${d.goal.dia}). This level of sustained elevation is associated with significantly increased CVA and MI risk per JNC/SPRINT data.` });
+          text: `<b>Substantially above target:</b> Mean ${overallSBP}/${overallDBP} is ${sbpOver > 0 ? '+' + sbpOver : sbpOver}/${dbpOver > 0 ? '+' + dbpOver : dbpOver} mmHg above goal (${d.goal.sys}/${d.goal.dia}). This sustained elevation is associated with significantly increased CVA and MI risk per SPRINT data. Each 10 mmHg SBP reduction → ~20% lower CVA, ~17% lower coronary events (Lancet 2016 meta-analysis).` });
       } else if (sbpOver >= 10 || dbpOver >= 10) {
         insights.push({ category: 'BP Patterns', priority: 2, icon: '🟠',
-          text: `<b>Moderately above target:</b> Mean ${overallSBP}/${overallDBP} is +${Math.max(sbpOver, dbpOver)} mmHg above goal. Each 10 mmHg SBP reduction is associated with ~20% lower CVA risk and ~17% lower coronary events (Lancet 2016 meta-analysis).` });
+          text: `<b>Moderately above target:</b> Mean ${overallSBP}/${overallDBP} is +${Math.max(sbpOver, dbpOver)} mmHg above goal. Each 10 mmHg SBP reduction → ~20% lower CVA risk, ~17% lower coronary events (Lancet 2016 meta-analysis).` });
       } else if (sbpOver > 0 || dbpOver > 0) {
         insights.push({ category: 'BP Patterns', priority: 4, icon: '🟡',
           text: `<b>Mildly above target:</b> Mean ${overallSBP}/${overallDBP} is close to goal (${d.goal.sys}/${d.goal.dia}). Fine-tuning may reach target without major regimen changes.` });
       } else {
         insights.push({ category: 'BP Patterns', priority: 5, icon: '🟢',
-          text: `<b>At goal:</b> Mean ${overallSBP}/${overallDBP} is at or below target (${d.goal.sys}/${d.goal.dia}). Consider maintaining current regimen and monitoring for sustained control.` });
+          text: `<b>At goal:</b> Mean ${overallSBP}/${overallDBP} is at or below target (${d.goal.sys}/${d.goal.dia}). Maintain current regimen and monitor for sustained control.` });
+      }
+
+      // Comorbidity-specific risk amplification
+      if (sbpOver > 0 && p.strokeTia) {
+        insights.push({ category: 'BP Patterns', priority: 1, icon: '🧠',
+          text: `<b>Secondary stroke prevention:</b> With prior stroke/TIA, PROGRESS trial showed SBP reduction of ~9 mmHg reduced recurrent stroke by 28%. Current SBP is +${sbpOver} above target — aggressive lowering to &lt;130/80 is indicated.` });
+      }
+      if (sbpOver > 0 && p.diabetes) {
+        insights.push({ category: 'BP Patterns', priority: 2, icon: '🩺',
+          text: `<b>Diabetes + HTN:</b> Coexisting diabetes amplifies CV risk ~2-fold. ADA recommends target &lt;130/80. Each 10 mmHg SBP reduction reduces microvascular complications ~13% (UKPDS). ACEi/ARB preferred for renal protection.` });
+      }
+      if (sbpOver > 0 && p.ckd) {
+        const egfrNote = p.ckdEgfr ? ` (eGFR ${p.ckdEgfr} mL/min)` : '';
+        insights.push({ category: 'BP Patterns', priority: 2, icon: '🫘',
+          text: `<b>CKD + HTN:</b> With chronic kidney disease${egfrNote}, uncontrolled HTN accelerates GFR decline. SPRINT-CKD showed intensive control (SBP &lt;120) slowed progression. Target &lt;130/80 per KDIGO.` });
+      }
+      if (sbpOver > 0 && p.cad) {
+        insights.push({ category: 'BP Patterns', priority: 2, icon: '❤️',
+          text: `<b>CAD + HTN:</b> With coronary artery disease, BP target &lt;130/80 is recommended (AHA/ACC 2017). Beta-blocker and ACEi/ARB are preferred for secondary prevention (SAVE, VALIANT).` });
       }
     }
 
-    // Severe readings frequency
+    // 1b. Severe readings frequency
     if (sevPct >= 15) {
       insights.push({ category: 'BP Patterns', priority: 1, icon: '🔴',
         text: `<b>High frequency of severe readings:</b> ${sevPct.toFixed(0)}% of readings are severe (SBP ≥160 or DBP ≥100). Urgent action warranted — severe HTN carries acute risk for hypertensive emergency, hemorrhagic CVA, and acute HF exacerbation.` });
@@ -1528,7 +1768,7 @@
         text: `<b>Significant severe readings:</b> ${sevPct.toFixed(1)}% of readings in severe range. Even intermittent severe spikes increase vascular shear stress and target-organ risk.` });
     }
 
-    // Circadian pattern analysis
+    // 1c. Circadian pattern analysis
     if (d.circDiff != null && d.morning.length >= 5 && d.ae.length >= 5) {
       const absDiff = Math.abs(d.circDiff);
       const absDiffDBP = Math.abs(d.circDiffDBP);
@@ -1537,96 +1777,118 @@
         const higherSBP = higher === 'morning' ? Math.round(d.mornMean) : Math.round(d.aeMean);
         const higherDBP = higher === 'morning' ? Math.round(d.mornMeanDBP) : Math.round(d.aeMeanDBP);
         insights.push({ category: 'BP Patterns', priority: 2, icon: '⏰',
-          text: `<b>Marked circadian asymmetry:</b> ${higher === 'morning' ? 'Morning' : 'Afternoon/evening'} BP (${higherSBP}/${higherDBP}) runs +${absDiff.toFixed(0)}/${absDiffDBP.toFixed(0)} mmHg higher. ${higher === 'morning' ? 'Morning surge is linked to increased CVA risk in the first hours after waking — consider evening dosing of long-acting agents.' : 'Afternoon/evening elevation may reflect medication wearing off (trough effect) or stress/activity patterns — consider split dosing or longer-acting formulations.'}` });
+          text: `<b>Marked circadian asymmetry:</b> ${higher === 'morning' ? 'Morning' : 'Afternoon/evening'} BP (${higherSBP}/${higherDBP}) runs +${absDiff.toFixed(0)}/${absDiffDBP.toFixed(0)} mmHg higher. ${higher === 'morning' ? 'Morning surge is linked to increased CVA risk in the first hours after waking (Kario et al.) — consider evening dosing of long-acting agents.' : 'Afternoon/evening elevation may reflect medication wearing off (trough effect) or stress/activity patterns — consider split dosing or longer-acting formulations.'}` });
       } else if (absDiff >= 5) {
         insights.push({ category: 'BP Patterns', priority: 3, icon: '⏰',
           text: `<b>Circadian pattern:</b> ${d.higherWindow === 'morning' ? 'Morning' : 'Afternoon/evening'} readings run +${absDiff.toFixed(0)} mmHg systolic higher. Moderate asymmetry — may warrant timing-specific dosing strategy.` });
       }
-    }
 
-    // Morning-specific severity
-    if (d.mornSevPct != null && d.mornSevPct >= 15 && (d.aeSevPct == null || d.mornSevPct > d.aeSevPct + 10)) {
-      insights.push({ category: 'BP Patterns', priority: 2, icon: '🌅',
-        text: `<b>Morning severe spike pattern:</b> ${d.mornSevPct.toFixed(0)}% of morning readings are severe vs ${(d.aeSevPct||0).toFixed(0)}% afternoon/evening. Morning BP surge is an independent risk factor for CVA (Kario et al.). Consider bedtime dosing of long-acting ARB or CCB.` });
-    }
-
-    // Isolated systolic hypertension
-    if (overallSBP != null && overallSBP >= d.goal.sys + 5 && overallDBP < d.goal.dia) {
-      insights.push({ category: 'BP Patterns', priority: 3, icon: '📊',
-        text: `<b>Isolated systolic hypertension pattern:</b> SBP ${overallSBP} is above target while DBP ${overallDBP} is at goal. This pattern, common with arterial stiffness, responds best to CCBs and diuretics per ALLHAT/VALUE trials.` });
-    }
-
-    // Pulse pressure
-    if (overallSBP != null && overallDBP != null) {
-      const pp = overallSBP - overallDBP;
-      if (pp >= 65) {
-        insights.push({ category: 'BP Patterns', priority: 3, icon: '📊',
-          text: `<b>Widened pulse pressure:</b> ${pp} mmHg (${overallSBP}-${overallDBP}). Pulse pressure >60 mmHg suggests increased arterial stiffness and is an independent predictor of cardiovascular events, particularly in older adults.` });
+      // Profile-specific circadian amplification
+      if (d.higherWindow === 'morning' && absDiff >= 8) {
+        if (p.strokeTia) {
+          insights.push({ category: 'BP Patterns', priority: 1, icon: '🌅',
+            text: `<b>Morning surge + prior stroke:</b> Morning BP surge in a patient with prior stroke/TIA is particularly concerning — stroke incidence peaks 6am–noon (Kario et al.). Strongly consider bedtime dosing of long-acting antihypertensives and evaluate for chronotherapy.` });
+        }
+        if (p.afib) {
+          insights.push({ category: 'BP Patterns', priority: 2, icon: '🌅',
+            text: `<b>Morning surge + afib:</b> Morning BP elevation with atrial fibrillation increases thromboembolic risk. Ensure adequate rate control and consider chronotherapy.` });
+        }
       }
     }
 
-    // BP variability (using recent readings)
+    // 1d. Non-dipping inference
+    if (d.ae.length >= 5 && d.morning.length >= 5 && d.aeMean != null && d.mornMean != null) {
+      if (d.aeMean >= d.mornMean - 2) {
+        insights.push({ category: 'BP Patterns', priority: 3, icon: '🌙',
+          text: `<b>Possible non-dipping pattern:</b> Afternoon/evening BP (${Math.round(d.aeMean)}/${Math.round(d.aeMeanDBP)}) is not lower than morning (${Math.round(d.mornMean)}/${Math.round(d.mornMeanDBP)}). Non-dipping is associated with increased target-organ damage and CV events. Consider ambulatory BP monitoring (ABPM) for confirmation.` });
+      }
+    }
+
+    // 1e. Morning-specific severity
+    if (d.mornSevPct != null && d.mornSevPct >= 15 && (d.aeSevPct == null || d.mornSevPct > d.aeSevPct + 10)) {
+      insights.push({ category: 'BP Patterns', priority: 2, icon: '🌅',
+        text: `<b>Morning severe spike pattern:</b> ${d.mornSevPct.toFixed(0)}% of morning readings are severe vs ${(d.aeSevPct||0).toFixed(0)}% afternoon/evening. Morning BP surge is an independent CVA risk factor (Kario et al.). Consider bedtime dosing of long-acting ARB or CCB.` });
+    }
+
+    // 1f. Isolated systolic hypertension
+    if (overallSBP != null && overallSBP >= d.goal.sys + 5 && overallDBP < d.goal.dia) {
+      let ishText = `<b>Isolated systolic hypertension:</b> SBP ${overallSBP} above target while DBP ${overallDBP} is at goal. Responds best to CCBs and thiazide-like diuretics (ALLHAT/VALUE).`;
+      if (p.age != null && p.age >= 65) {
+        ishText += ` In elderly (age ${p.age}), ISH is driven by arterial stiffening. Caution with excessive DBP lowering (&lt;65 mmHg) — J-curve risk for coronary perfusion. Start low, go slow.`;
+      }
+      insights.push({ category: 'BP Patterns', priority: 3, icon: '📊', text: ishText });
+    }
+
+    // 1g. Pulse pressure
+    if (overallSBP != null && overallDBP != null) {
+      const pp = overallSBP - overallDBP;
+      if (pp >= 65) {
+        let ppText = `<b>Widened pulse pressure:</b> ${pp} mmHg (${overallSBP}−${overallDBP}). PP >60 mmHg indicates increased arterial stiffness — independent CV event predictor.`;
+        if (p.age != null && p.age >= 60) ppText += ` Particularly significant at age ${p.age}, reflecting age-related aortic stiffening.`;
+        insights.push({ category: 'BP Patterns', priority: 3, icon: '📊', text: ppText });
+      }
+    }
+
+    // 1h. BP variability
     if (d.recentAll.length >= 8) {
       const sbpValues = d.recentAll.map(r => r.sys);
       const sbpSD = stddev(sbpValues);
       if (sbpSD >= 18) {
         insights.push({ category: 'BP Patterns', priority: 2, icon: '📈',
-          text: `<b>High BP variability:</b> SBP standard deviation is ${sbpSD.toFixed(1)} mmHg. Visit-to-visit variability >15 mmHg is an independent stroke risk factor (Rothwell et al., Lancet 2010). CCBs tend to reduce BP variability more than other classes.` });
+          text: `<b>High BP variability:</b> SBP SD = ${sbpSD.toFixed(1)} mmHg. Visit-to-visit variability >15 mmHg is an independent stroke risk factor (Rothwell et al., Lancet 2010). CCBs tend to reduce BP variability more than other classes.` });
       } else if (sbpSD >= 14) {
         insights.push({ category: 'BP Patterns', priority: 3, icon: '📈',
-          text: `<b>Moderate BP variability:</b> SBP standard deviation is ${sbpSD.toFixed(1)} mmHg. Consider evaluating adherence patterns, white-coat effect, and medication timing consistency.` });
+          text: `<b>Moderate BP variability:</b> SBP SD = ${sbpSD.toFixed(1)} mmHg. Evaluate adherence patterns, white-coat effect, and medication timing consistency.` });
       }
     }
 
-    // Hold events impact
+    // 1i. Hold events impact
     const totalHolds = d.holdEvents.length;
     const totalDays = d.rs.length > 1 ? Math.round(daysBetween(d.rs[0].t, d.rs[d.rs.length-1].t)) : 1;
     if (totalHolds >= 3) {
       const holdRate = (totalHolds / totalDays * 30).toFixed(1);
       insights.push({ category: 'BP Patterns', priority: 3, icon: '⏸️',
-        text: `<b>Frequent medication holds:</b> ${totalHolds} hold events over ${totalDays} days (~${holdRate}/month). Frequent holds disrupt steady-state drug levels and may contribute to BP variability. Consider investigating hold triggers (e.g., hypotension, bradycardia, procedures).` });
+        text: `<b>Frequent medication holds:</b> ${totalHolds} hold events over ${totalDays} days (~${holdRate}/month). Frequent holds disrupt steady-state drug levels and may contribute to BP variability. Investigate hold triggers (hypotension, bradycardia, procedures).` });
     }
 
-    // ── 2. MEDICATION–BP CORRELATION INSIGHTS ──
+    // ══════════════════════════════════════════════
+    // 2. MEDICATION–BP CORRELATION INSIGHTS
+    // ══════════════════════════════════════════════
 
+    // 2a. Phase-to-phase comparison
     if (d.validPhases.length >= 2) {
       const last = d.validPhases[d.validPhases.length - 1];
       const prev = d.validPhases[d.validPhases.length - 2];
       const dSBP = last.all.meanSBP - prev.all.meanSBP;
       const dGreen = last.all.green - prev.all.green;
       const dSev = last.all.severe - prev.all.severe;
-
-      // Identify what changed between phases
       const lastMeds = last.label;
       const prevMeds = prev.label;
 
       if (Math.abs(dSBP) >= 3 || Math.abs(dGreen) >= 5) {
-        const direction = dSBP < -3 ? 'improvement' : dSBP > 3 ? 'worsening' : 'stable BP';
         const greenDir = dGreen > 5 ? `+${dGreen.toFixed(0)}pp at-goal` : dGreen < -5 ? `${dGreen.toFixed(0)}pp at-goal` : '';
         const sevDir = dSev > 3 ? `, but +${dSev.toFixed(0)}pp severe` : dSev < -3 ? `, and ${dSev.toFixed(0)}pp severe` : '';
 
         if (dSBP < -3) {
           insights.push({ category: 'Med Correlations', priority: 2, icon: '💊',
-            text: `<b>Positive response to latest regimen change:</b> SBP dropped ${Math.abs(dSBP).toFixed(0)} mmHg after switching from "${prevMeds}" to "${lastMeds}." ${greenDir ? `At-goal improved ${greenDir}` : ''}${sevDir}. This suggests good pharmacologic response to the current regimen.` });
+            text: `<b>Positive response to latest regimen change:</b> SBP dropped ${Math.abs(dSBP).toFixed(0)} mmHg after switching from "${prevMeds}" to "${lastMeds}." ${greenDir ? `At-goal improved ${greenDir}` : ''}${sevDir}. Good pharmacologic response to the current regimen.` });
         } else if (dSBP > 3) {
           insights.push({ category: 'Med Correlations', priority: 2, icon: '⚠️',
-            text: `<b>Worsening after latest regimen change:</b> SBP rose +${dSBP.toFixed(0)} mmHg after switching from "${prevMeds}" to "${lastMeds}." ${greenDir ? `At-goal changed ${greenDir}` : ''}${sevDir}. Consider evaluating adherence, drug interaction, or if the previous regimen should be restored.` });
+            text: `<b>Worsening after latest change:</b> SBP rose +${dSBP.toFixed(0)} mmHg after switching from "${prevMeds}" to "${lastMeds}." ${greenDir ? `At-goal changed ${greenDir}` : ''}${sevDir}. Evaluate adherence, drug interaction, or whether the previous regimen should be restored.` });
         }
-
-        // Tier-shifting warning
         if (dGreen > 5 && dSev > 3) {
           insights.push({ category: 'Med Correlations', priority: 2, icon: '⚠️',
-            text: `<b>Tier-shifting detected:</b> Although at-goal improved +${dGreen.toFixed(0)}pp, severe readings also rose +${dSev.toFixed(0)}pp. The apparent improvement is partly from readings shifting between severity categories — net clinical benefit is uncertain.` });
+            text: `<b>Tier-shifting detected:</b> At-goal improved +${dGreen.toFixed(0)}pp but severe also rose +${dSev.toFixed(0)}pp. Net clinical benefit is uncertain — readings may be shifting between severity categories.` });
         }
       }
 
       // Best phase identification
       if (d.validPhases.length >= 3) {
         let bestPhase = d.validPhases[0];
-        for (const p of d.validPhases) {
-          const score = (p.all.green || 0) - (p.all.severe || 0);
+        for (const ph of d.validPhases) {
+          const score = (ph.all.green || 0) - (ph.all.severe || 0);
           const bestScore = (bestPhase.all.green || 0) - (bestPhase.all.severe || 0);
-          if (score > bestScore) bestPhase = p;
+          if (score > bestScore) bestPhase = ph;
         }
         if (bestPhase !== last && (bestPhase.all.green - last.all.green > 10)) {
           insights.push({ category: 'Med Correlations', priority: 3, icon: '🔍',
@@ -1635,114 +1897,285 @@
       }
     }
 
-    // Drug class analysis
+    // 2b. Drug class analysis
     if (currentDrugNames.length > 0) {
       const classes = [...currentClassSet].filter(c => c !== 'unknown');
 
-      // Beta-blocker + HR insight
+      // Beta-blocker + HR
       if (currentClassSet.has('beta') && d.meanHRVal != null) {
         if (d.meanHRVal > 80) {
           insights.push({ category: 'Med Correlations', priority: 3, icon: '❤️',
-            text: `<b>Beta-blocker with elevated HR:</b> Mean HR ${Math.round(d.meanHRVal)} bpm despite beta-blocker therapy. This may indicate subtherapeutic dosing, poor adherence, or compensatory tachycardia. Consider uptitration if tolerated.` });
+            text: `<b>Beta-blocker with elevated HR:</b> Mean HR ${Math.round(d.meanHRVal)} bpm despite beta-blocker. May indicate subtherapeutic dosing, poor adherence, or compensatory tachycardia. Consider uptitration if tolerated.` });
         } else if (d.meanHRVal < 55) {
           insights.push({ category: 'Med Correlations', priority: 3, icon: '❤️',
-            text: `<b>Low HR on beta-blocker:</b> Mean HR ${Math.round(d.meanHRVal)} bpm. If symptomatic (fatigue, dizziness), may need dose reduction. This could also explain hold events.` });
+            text: `<b>Low HR on beta-blocker:</b> Mean HR ${Math.round(d.meanHRVal)} bpm. If symptomatic (fatigue, dizziness), may need dose reduction. Could also explain hold events.` });
         }
       }
 
       // Dual RAAS blockade warning
       if (currentClassSet.has('arb') && currentClassSet.has('acei')) {
         insights.push({ category: 'Med Correlations', priority: 1, icon: '⛔',
-          text: `<b>Dual RAAS blockade detected:</b> Both ACE inhibitor and ARB are active. Per ONTARGET trial, dual RAAS blockade increases renal adverse events without additional CV benefit. Generally not recommended.` });
+          text: `<b>Dual RAAS blockade:</b> Both ACEi and ARB are active. Per ONTARGET, dual RAAS blockade increases renal adverse events without additional CV benefit. Generally not recommended.` });
       }
 
-      // Missing guideline-preferred classes
+      // 2c. Profile-aware safety alerts
+      if (hasProfile) {
+        // ACEi + angioedema
+        if (p.angioedemaHistory) {
+          for (const [drug, cls] of Object.entries(currentDrugClasses)) {
+            if (cls.class === 'acei') {
+              insights.push({ category: 'Med Correlations', priority: 1, icon: '⛔',
+                text: `<b>ACEi with angioedema history:</b> ${drug} is absolutely contraindicated with prior angioedema. Switch to ARB (with caution — ~2% cross-reactivity) or alternative class immediately.` });
+            }
+          }
+        }
+        // Non-DHP CCB + HFrEF
+        if (p.heartFailure && p.hfType === 'hfref') {
+          const nonDhpCCBs = ['diltiazem','verapamil'];
+          for (const drug of currentDrugNames) {
+            if (nonDhpCCBs.some(nd => drug.toLowerCase().includes(nd))) {
+              insights.push({ category: 'Med Correlations', priority: 1, icon: '⛔',
+                text: `<b>Non-DHP CCB in HFrEF:</b> ${drug} has negative inotropic effects and worsens HF outcomes. Switch to amlodipine if CCB needed.` });
+            }
+          }
+          if (!currentClassSet.has('beta')) {
+            insights.push({ category: 'Med Correlations', priority: 1, icon: '❤️',
+              text: `<b>HFrEF without beta-blocker:</b> Evidence-based beta-blockers (carvedilol, bisoprolol, metoprolol succinate) reduce mortality ~35% in HFrEF. Should be part of regimen unless contraindicated.` });
+          }
+        }
+        // Non-selective BB + asthma/COPD
+        if (p.asthmaCopd) {
+          for (const [drug, cls] of Object.entries(currentDrugClasses)) {
+            if (cls.class === 'beta') {
+              const nonSelective = ['propranolol','carvedilol','labetalol','nadolol','sotalol'];
+              if (nonSelective.some(ns => drug.toLowerCase().includes(ns))) {
+                insights.push({ category: 'Med Correlations', priority: 1, icon: '⛔',
+                  text: `<b>Non-selective beta-blocker with asthma/COPD:</b> ${drug} blocks β2 receptors and can trigger bronchospasm. Switch to cardioselective agent (bisoprolol, nebivolol) or alternative class.` });
+              }
+            }
+          }
+        }
+        // ACEi/ARB in pregnancy
+        if (p.pregnancy) {
+          for (const [drug, cls] of Object.entries(currentDrugClasses)) {
+            if (cls.class === 'acei' || cls.class === 'arb') {
+              insights.push({ category: 'Med Correlations', priority: 1, icon: '⛔',
+                text: `<b>${cls.label} contraindicated in pregnancy:</b> ${drug} is teratogenic (fetal renal dysgenesis, oligohydramnios). Switch to methyldopa, labetalol, or nifedipine ER immediately.` });
+            }
+          }
+        }
+        // Thiazide + gout
+        if (p.gout) {
+          for (const [drug, cls] of Object.entries(currentDrugClasses)) {
+            if (cls.class === 'diuretic' && !drug.toLowerCase().includes('spironolactone') && !drug.toLowerCase().includes('eplerenone')) {
+              insights.push({ category: 'Med Correlations', priority: 2, icon: '⚠️',
+                text: `<b>Thiazide/loop diuretic with gout:</b> ${drug} raises serum uric acid and may precipitate flares. Consider switching to losartan (uricosuric ARB).` });
+            }
+          }
+        }
+        // Diabetes without RAAS blockade
+        if (p.diabetes && !currentClassSet.has('arb') && !currentClassSet.has('acei') && overallSBP > d.goal.sys) {
+          insights.push({ category: 'Med Correlations', priority: 2, icon: '💡',
+            text: `<b>Diabetes without RAAS blockade:</b> Patient has diabetes but is not on ACEi or ARB. RAAS blockade is first-line for diabetic nephropathy prevention (HOPE, MICRO-HOPE).` });
+        }
+      }
+
+      // Missing guideline-preferred classes (generic, non-profile)
       if (overallSBP != null && overallSBP > d.goal.sys) {
         if (!currentClassSet.has('ccb') && !currentClassSet.has('diuretic') && classes.length < 3) {
           insights.push({ category: 'Med Correlations', priority: 3, icon: '💡',
-            text: `<b>Guideline consideration:</b> Current regimen does not include a CCB or diuretic. Per AHA/ACC guidelines, thiazide-like diuretics and CCBs are first-line options with strong CVA/MI risk reduction evidence, particularly for isolated systolic HTN.` });
+            text: `<b>Guideline consideration:</b> Current regimen does not include a CCB or diuretic. Per AHA/ACC, thiazide-like diuretics and CCBs are first-line with strong CVA/MI risk reduction evidence, particularly for isolated systolic HTN.` });
         }
       }
     }
 
-    // ── 3. TREATMENT OPTIONS / PREDICTIONS ──
+    // 2d. Pharmacodynamic timing analysis
+    if (d.circDiff != null && Math.abs(d.circDiff) >= 8 && d.higherWindow === 'morning' && currentDrugNames.length > 0) {
+      insights.push({ category: 'Med Correlations', priority: 3, icon: '⏱️',
+        text: `<b>Peak-trough coverage gap:</b> Morning surge of +${Math.abs(d.circDiff).toFixed(0)} mmHg suggests trough effect at waking. Current medications may not provide full 24-hour coverage. Consider: (a) longer-acting formulations, (b) split AM/PM dosing, or (c) bedtime dosing of one agent.` });
+    }
+
+    // ══════════════════════════════════════════════
+    // 3. TREATMENT OPTIONS (personalized)
+    // ══════════════════════════════════════════════
 
     if (overallSBP != null && overallSBP > d.goal.sys) {
       const sbpGap = overallSBP - d.goal.sys;
 
-      // Option: Add CCB if not present
-      if (!currentClassSet.has('ccb')) {
-        const expectedDrop = Math.min(sbpGap, currentDrugNames.length === 0 ? 12 : 8);
-        treatments.push({
-          text: `<b>Add a CCB</b> (e.g., amlodipine 5 mg qd)`,
-          rationale: `CCBs reduce BP variability and are particularly effective for isolated systolic HTN and morning surge. Expected SBP reduction: ~${expectedDrop}-${expectedDrop+4} mmHg. Well-tolerated; watch for pedal edema.`,
-          confidence: currentClassSet.has('arb') || currentClassSet.has('acei') ? 'High' : 'Moderate',
-        });
+      // Build contraindication/preference sets from profile
+      const avoid = new Set();
+      const prefer = new Set();
+      const caution = new Set();
+      if (p.angioedemaHistory) avoid.add('acei');
+      if (p.aceiCough) avoid.add('acei');
+      if (p.pregnancy) { avoid.add('acei'); avoid.add('arb'); prefer.add('ccb'); }
+      if (p.asthmaCopd) caution.add('beta');
+      if (p.gout) caution.add('diuretic');
+      if (p.ccbEdema) caution.add('ccb');
+      if (p.heartFailure && p.hfType === 'hfref') { prefer.add('acei'); prefer.add('arb'); prefer.add('beta'); }
+      if (p.diabetes) { prefer.add('acei'); prefer.add('arb'); }
+      if (p.ckd) { prefer.add('acei'); prefer.add('arb'); }
+      if (p.race === 'black') { prefer.add('ccb'); prefer.add('diuretic'); }
+      if (p.strokeTia) { prefer.add('acei'); prefer.add('diuretic'); }
+      if (p.cad) { prefer.add('beta'); prefer.add('acei'); prefer.add('arb'); }
+
+      // ── Option: Add CCB ──
+      if (!currentClassSet.has('ccb') && !avoid.has('ccb')) {
+        const drop = Math.min(sbpGap, currentDrugNames.length === 0 ? 12 : 8);
+        let rat = `CCBs reduce BP variability and are effective for ISH and morning surge. Expected SBP reduction: ~${drop}-${drop+4} mmHg.`;
+        let conf = (currentClassSet.has('arb') || currentClassSet.has('acei')) ? 'High' : 'Moderate';
+        let se = 'Watch for pedal edema, headache, flushing.';
+        let drugName = p.pregnancy ? 'nifedipine ER 30-60 mg qd' : 'amlodipine 5 mg qd';
+        if (p.race === 'black') { rat += ' <i>Preferred first-line in Black patients (ALLHAT).</i>'; conf = 'High'; }
+        if (p.pregnancy) rat += ' <i>Nifedipine ER is safe in pregnancy.</i>';
+        if (p.ccbEdema) { rat += ' <i>Prior CCB edema — consider lower dose or combo with ACEi/ARB (reduces CCB edema ~30%).</i>'; conf = 'Moderate'; }
+        if (p.heartFailure && p.hfType === 'hfref') rat += ' <i>In HFrEF, use only DHP CCBs (amlodipine/felodipine).</i>';
+        treatments.push({ text: `<b>Add a CCB</b> (e.g., ${drugName})`, rationale: rat + ' ' + se, confidence: conf, preferred: prefer.has('ccb') });
       }
 
-      // Option: Add/switch to thiazide-like diuretic
-      if (!currentClassSet.has('diuretic')) {
-        treatments.push({
-          text: `<b>Add a thiazide-like diuretic</b> (e.g., chlorthalidone 12.5–25 mg qd)`,
-          rationale: `Chlorthalidone has stronger 24-hour BP lowering than HCTZ and proven CVA reduction (ALLHAT). Expected SBP reduction: ~8-15 mmHg. Monitor electrolytes and renal function.`,
-          confidence: 'High',
-        });
+      // ── Option: Add thiazide-like diuretic ──
+      if (!currentClassSet.has('diuretic') && !avoid.has('diuretic')) {
+        let rat = 'Chlorthalidone has stronger 24-hour BP lowering than HCTZ and proven CVA reduction (ALLHAT).';
+        let conf = 'High';
+        let se = 'Monitor K+, Na+, glucose, uric acid, renal function.';
+        let drugName = 'chlorthalidone 12.5-25 mg qd';
+        if (p.race === 'black') { rat += ' <i>Preferred first-line in Black patients (ALLHAT).</i>'; }
+        if (p.gout) { rat += ' <i>CAUTION: Patient has gout — thiazides raise uric acid. Consider losartan (uricosuric) instead.</i>'; conf = 'Low'; }
+        if (p.ckd && p.ckdEgfr != null && p.ckdEgfr < 30) { rat += ' <i>eGFR &lt;30: use loop diuretic instead of thiazide.</i>'; drugName = 'furosemide 20-40 mg qd or torsemide 10-20 mg'; conf = 'Moderate'; }
+        if (p.diabetes) se += ' <i>Thiazides may worsen glucose — monitor HbA1c.</i>';
+        if (p.age != null && p.age >= 75) se += ' <i>Elderly: monitor for orthostatic hypotension.</i>';
+        treatments.push({ text: `<b>Add a ${p.ckd && p.ckdEgfr && p.ckdEgfr < 30 ? 'loop' : 'thiazide-like'} diuretic</b> (e.g., ${drugName})`, rationale: rat + ' ' + se, confidence: conf, preferred: prefer.has('diuretic') });
       }
 
-      // Option: Uptitrate current medications
-      if (currentDrugNames.length > 0 && sbpGap <= 15) {
-        treatments.push({
-          text: `<b>Uptitrate current regimen</b>`,
-          rationale: `With a gap of only ${sbpGap} mmHg to goal, dose optimization of existing agents may suffice before adding new classes. Half of maximal BP lowering typically occurs at half the maximal dose.`,
-          confidence: 'Moderate',
-        });
-      }
-
-      // Option: Evening/bedtime dosing
-      if (d.circDiff != null && d.higherWindow === 'morning' && Math.abs(d.circDiff) >= 8) {
-        treatments.push({
-          text: `<b>Shift dosing to bedtime</b>`,
-          rationale: `Morning BP surge of +${Math.abs(d.circDiff).toFixed(0)} mmHg suggests medication trough effect at waking. The MAPEC and Hygia trials showed bedtime dosing of ≥1 HTN med reduced CVA events by ~45%. Move the longest-acting agent to HS.`,
-          confidence: 'Moderate',
-        });
-      }
-
-      // Option: Add ARB/ACEi if not present
+      // ── Option: Add ACEi/ARB ──
       if (!currentClassSet.has('arb') && !currentClassSet.has('acei')) {
-        treatments.push({
-          text: `<b>Add an ARB</b> (e.g., valsartan 80-160 mg qd)`,
-          rationale: `RAAS blockade is first-line for HTN with renal protection benefits. Well-suited for combination with CCB or diuretic. Expected SBP reduction: ~8-12 mmHg.`,
-          confidence: 'High',
-        });
+        if (!avoid.has('acei') || !avoid.has('arb')) {
+          let drugName, rat, se;
+          if (avoid.has('acei')) {
+            drugName = p.gout ? 'losartan 50-100 mg qd (uricosuric)' : 'valsartan 80-160 mg qd';
+            rat = 'ARB selected — ACEi avoided due to ' + (p.angioedemaHistory ? 'angioedema history' : 'cough intolerance') + '.';
+            se = 'Monitor K+ and creatinine. Contraindicated in pregnancy.';
+            if (p.angioedemaHistory) se += ' ~2% cross-reactivity for angioedema with ARBs — monitor closely.';
+          } else {
+            drugName = 'lisinopril 10-20 mg or valsartan 80-160 mg';
+            rat = 'RAAS blockade is first-line per AHA/ACC guidelines. Expected SBP reduction: ~8-12 mmHg.';
+            se = 'ACEi: watch for cough (~10%), hyperkalemia. ARB: generally better tolerated.';
+          }
+          if (p.diabetes) rat += ' <i>Preferred in diabetes for renal protection (HOPE, MICRO-HOPE).</i>';
+          if (p.ckd) rat += ' <i>Reduces proteinuria and slows CKD progression.</i>';
+          if (p.cad) rat += ' <i>Secondary CV prevention post-MI (SAVE, VALIANT).</i>';
+          if (p.heartFailure) rat += ' <i>Cornerstone of HF therapy — mortality reduction.</i>';
+          if (p.gout && !avoid.has('acei')) rat += ' <i>Losartan specifically is uricosuric — beneficial in gout.</i>';
+          if (p.strokeTia) rat += ' <i>Part of PROGRESS regimen (perindopril + indapamide) for secondary stroke prevention.</i>';
+          const conf = (p.diabetes || p.ckd || p.heartFailure || p.cad) ? 'High' : 'Moderate';
+          treatments.push({ text: `<b>Add ${avoid.has('acei') ? 'an ARB' : 'an ACEi or ARB'}</b> (e.g., ${drugName})`, rationale: rat + ' ' + se, confidence: conf, preferred: prefer.has('acei') || prefer.has('arb') });
+        }
       }
 
-      // Option: Switch within class if poor response
+      // ── Option: Add beta-blocker (only with compelling indication) ──
+      if (!currentClassSet.has('beta') && (p.cad || (p.heartFailure && p.hfType === 'hfref') || p.afib) && !avoid.has('beta')) {
+        const indications = [];
+        let drugName = 'metoprolol succinate 25-50 mg qd';
+        if (p.cad) indications.push('CAD/post-MI (mortality reduction)');
+        if (p.heartFailure && p.hfType === 'hfref') {
+          indications.push('HFrEF (~35% mortality reduction)');
+          drugName = 'carvedilol 3.125 mg BID or bisoprolol 1.25 mg qd (start low, uptitrate)';
+        }
+        if (p.afib) indications.push('afib rate control');
+        let rat = 'Beta-blocker indicated for: ' + indications.join('; ') + '.';
+        let se = 'Watch for fatigue, bradycardia, exercise intolerance.';
+        if (p.asthmaCopd) { rat += ' <i>CAUTION: Use only cardioselective agents (bisoprolol, nebivolol) due to asthma/COPD.</i>'; drugName = 'bisoprolol 2.5-5 mg qd'; se += ' Monitor for bronchospasm.'; }
+        if (p.age != null && p.age >= 75) se += ' <i>Elderly: start very low, monitor for bradycardia and falls.</i>';
+        treatments.push({ text: `<b>Add a beta-blocker</b> (e.g., ${drugName})`, rationale: rat + ' ' + se, confidence: 'High', preferred: true });
+      }
+
+      // ── Option: Uptitrate current ──
+      if (currentDrugNames.length > 0 && sbpGap <= 15) {
+        treatments.push({ text: `<b>Uptitrate current regimen</b>`, rationale: `Gap of only ${sbpGap} mmHg to goal — dose optimization of existing agents may suffice. Half of maximal BP lowering occurs at half the maximal dose.`, confidence: 'Moderate', preferred: false });
+      }
+
+      // ── Option: Bedtime dosing ──
+      if (d.circDiff != null && d.higherWindow === 'morning' && Math.abs(d.circDiff) >= 8) {
+        treatments.push({ text: `<b>Shift dosing to bedtime</b>`, rationale: `Morning surge of +${Math.abs(d.circDiff).toFixed(0)} mmHg suggests trough effect at waking. MAPEC/Hygia trials showed bedtime dosing of ≥1 HTN med reduced CVA events ~45%. Move the longest-acting agent to HS.`, confidence: 'Moderate', preferred: false });
+      }
+
+      // ── Option: Spironolactone for resistant HTN ──
+      if (currentDrugNames.length >= 3 && sbpGap > 5) {
+        let mraNote = '';
+        if (p.ckd && p.ckdEgfr != null && p.ckdEgfr < 30) mraNote = ' <i>CAUTION: eGFR &lt;30 — high hyperkalemia risk with MRA.</i>';
+        treatments.push({ text: `<b>Consider spironolactone</b> (25-50 mg qd) for resistant HTN`, rationale: `On ≥3 agents with persistent uncontrolled BP. PATHWAY-2 showed spironolactone was the most effective add-on for resistant HTN, superior to bisoprolol and doxazosin. Monitor K+ closely.${mraNote}`, confidence: 'High', preferred: false });
+      }
+
+      // ── Option: Pregnancy-specific ──
+      if (p.pregnancy && !currentDrugNames.some(dn => ['methyldopa','labetalol','nifedipine'].some(safe => dn.toLowerCase().includes(safe)))) {
+        treatments.push({ text: `<b>Switch to pregnancy-safe regimen</b>`, rationale: 'ACEi, ARBs, and direct renin inhibitors are teratogenic. Safe options: methyldopa 250-500 mg BID-TID, labetalol 100-200 mg BID-TID, or nifedipine ER 30-60 mg qd. Target &lt;140/90 (or &lt;135/85 per NICE).', confidence: 'High', preferred: true });
+      }
+
+      // ── Option: Switch class if poor response ──
       if (d.validPhases.length >= 2) {
         const lastPhase = d.validPhases[d.validPhases.length - 1];
         if (lastPhase.all.green < 30 && lastPhase.all.severe > 10) {
-          treatments.push({
-            text: `<b>Consider switching drug class</b>`,
-            rationale: `Current regimen yields only ${lastPhase.all.green.toFixed(0)}% at-goal with ${lastPhase.all.severe.toFixed(0)}% severe readings. Poor response after adequate trial suggests pharmacogenomic or physiologic mismatch. Switch to a different mechanism of action.`,
-            confidence: 'Moderate',
-          });
+          treatments.push({ text: `<b>Consider switching drug class</b>`, rationale: `Current regimen yields only ${lastPhase.all.green.toFixed(0)}% at-goal with ${lastPhase.all.severe.toFixed(0)}% severe. Poor response after adequate trial suggests pharmacogenomic or physiologic mismatch. Switch to a different mechanism.`, confidence: 'Moderate', preferred: false });
         }
       }
     }
 
-    // ── RENDER HTML ──
+    // ── Conditional prompt when no profile ──
+    if (!hasProfile && overallSBP != null && overallSBP > d.goal.sys) {
+      insights.push({ category: 'Personalization', priority: 5, icon: '👤',
+        text: `<b>Personalize these insights:</b> Fill in the <i>Patient Profile</i> above (age, sex, race, comorbidities) to unlock evidence-based recommendations tailored to this patient. Examples:<br>
+        &bull; <i>Black/African American</i> → CCB or thiazide-like diuretic preferred (ALLHAT)<br>
+        &bull; <i>Diabetes</i> → ACEi/ARB for renal protection (HOPE)<br>
+        &bull; <i>CKD</i> → eGFR-guided drug selection<br>
+        &bull; <i>HFrEF</i> → specific beta-blockers + RAAS blockade required<br>
+        &bull; <i>Asthma</i> → avoid non-selective beta-blockers<br>
+        &bull; <i>Gout</i> → avoid thiazides, prefer losartan` });
+    }
+
+    // ══════════════════════════════════════════════
+    // RENDER HTML
+    // ══════════════════════════════════════════════
     let out = '';
     if (insights.length === 0 && treatments.length === 0) return out;
 
     out += '<div class="hr" style="margin:16px 0;"></div>';
     out += '<div style="margin-top:16px;">';
-    out += `<div style="font-weight:700; font-size:15px; color:var(--accent); margin-bottom:10px;">🧠 Clinical Insights <span style="font-weight:400; font-size:11px; color:var(--muted);">(AI-generated, rule-based)</span></div>`;
 
-    // Sort by priority
+    // Personalization summary banner
+    if (hasProfile) {
+      const parts = [];
+      if (p.age) parts.push(`Age ${p.age}`);
+      if (p.sex) parts.push(p.sex === 'male' ? 'Male' : 'Female');
+      if (p.race) parts.push({black:'Black',white:'White',hispanic:'Hispanic',asian:'Asian',other:'Other'}[p.race] || p.race);
+      const comorbs = [];
+      if (p.diabetes) comorbs.push('DM');
+      if (p.ckd) comorbs.push('CKD' + (p.ckdEgfr ? ` (eGFR ${p.ckdEgfr})` : ''));
+      if (p.heartFailure) comorbs.push(p.hfType === 'hfref' ? 'HFrEF' : p.hfType === 'hfpef' ? 'HFpEF' : 'HF');
+      if (p.cad) comorbs.push('CAD');
+      if (p.strokeTia) comorbs.push('Stroke/TIA');
+      if (p.afib) comorbs.push('AFib');
+      if (p.asthmaCopd) comorbs.push('Asthma/COPD');
+      if (p.gout) comorbs.push('Gout');
+      if (p.pregnancy) comorbs.push('Pregnancy');
+      if (comorbs.length) parts.push(comorbs.join(', '));
+      const alerts = [];
+      if (p.angioedemaHistory) alerts.push('Angioedema Hx');
+      if (p.aceiCough) alerts.push('ACEi cough');
+      if (p.ccbEdema) alerts.push('CCB edema');
+      if (p.otherIntolerance) alerts.push(p.otherIntolerance);
+      if (alerts.length) parts.push('⚠️ ' + alerts.join(', '));
+
+      out += `<div style="padding:6px 10px; border-radius:8px; background:rgba(44,93,205,.06); border:1px solid rgba(44,93,205,.15); font-size:11px; color:var(--accent); margin-bottom:10px;">
+        <b>Personalized for:</b> ${parts.join(' · ')}
+      </div>`;
+    }
+
+    out += `<div style="font-weight:700; font-size:15px; color:var(--accent); margin-bottom:10px;">🧠 Clinical Insights <span style="font-weight:400; font-size:11px; color:var(--muted);">(AI-generated, rule-based${hasProfile ? ', personalized' : ''})</span></div>`;
+
+    // Sort and render insights by category
     insights.sort((a, b) => a.priority - b.priority);
-
-    // Group by category
-    const categories = ['BP Patterns', 'Med Correlations'];
-    const catLabels = { 'BP Patterns': '📊 BP Pattern Insights', 'Med Correlations': '💊 Medication–BP Correlations' };
+    const categories = ['BP Patterns', 'Med Correlations', 'Personalization'];
+    const catLabels = { 'BP Patterns': '📊 BP Pattern Insights', 'Med Correlations': '💊 Medication–BP Correlations', 'Personalization': '👤 Personalization' };
     for (const cat of categories) {
       const items = insights.filter(i => i.category === cat);
       if (!items.length) continue;
@@ -1757,21 +2190,29 @@
       out += '</div>';
     }
 
-    // Treatment options
+    // Treatment options — sorted: preferred first, then by confidence
     if (treatments.length > 0) {
-      out += `<div style="font-weight:650; font-size:13px; color:#37474F; margin:12px 0 6px;">🎯 Potential Treatment Options</div>`;
+      treatments.sort((a, b) => {
+        if (a.preferred && !b.preferred) return -1;
+        if (!a.preferred && b.preferred) return 1;
+        const co = { High: 0, Moderate: 1, Low: 2 };
+        return (co[a.confidence] || 2) - (co[b.confidence] || 2);
+      });
+      out += `<div style="font-weight:650; font-size:13px; color:#37474F; margin:12px 0 6px;">🎯 Potential Treatment Options${hasProfile ? ' <span style="font-size:11px; color:var(--accent);">(personalized)</span>' : ''}</div>`;
       out += '<div style="display:flex; flex-direction:column; gap:6px;">';
       for (const t of treatments) {
         const confColor = t.confidence === 'High' ? '#2E7D32' : t.confidence === 'Moderate' ? '#E65100' : '#78909C';
-        out += `<div style="padding:8px 12px; border-left:4px solid #1565C0; background:rgba(21,101,192,.04); border-radius:0 6px 6px 0; font-size:12px; line-height:1.6;">`;
-        out += `${t.text} <span style="color:${confColor}; font-size:11px; font-weight:600;">[${t.confidence} confidence]</span>`;
+        const borderColor = t.preferred ? '#1565C0' : '#78909C';
+        const prefTag = t.preferred ? ' <span style="background:#1565C0;color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;">PREFERRED</span>' : '';
+        out += `<div style="padding:8px 12px; border-left:4px solid ${borderColor}; background:rgba(21,101,192,.04); border-radius:0 6px 6px 0; font-size:12px; line-height:1.6;">`;
+        out += `${t.text}${prefTag} <span style="color:${confColor}; font-size:11px; font-weight:600;">[${t.confidence} confidence]</span>`;
         out += `<div style="color:var(--muted); margin-top:3px; font-size:11px;">${t.rationale}</div>`;
         out += '</div>';
       }
       out += '</div>';
     }
 
-    out += '</div>'; // close section
+    out += '</div>';
     return out;
   }
 
@@ -1989,6 +2430,7 @@
       mornNearPct, aeNearPct,
       circDiff, circDiffDBP, higherWindow,
       meanHRVal, hrReadings, insightRecentWeeks,
+      profile: getPatientProfile(),
     });
 
     // Disclaimer
@@ -2302,6 +2744,8 @@
     rawRows = null; headers = null; mapping = null;
     readings = []; medIntervals = {}; holdEvents = [];
     try { localStorage.removeItem(STORAGE_PREFIX+'_fileName'); localStorage.removeItem(STORAGE_PREFIX+'_fileData'); } catch(e) {}
+    // Also clear patient profile
+    clearProfile();
     // Reset file input & label
     $('file').value = '';
     $('file').style.display = '';
@@ -2382,6 +2826,14 @@
   $('clearBtn').addEventListener('click', clearData);
   $('changeFileBtn').addEventListener('click',(e)=>{ e.preventDefault(); $('file').click(); });
 
+  // Patient Profile event wiring
+  $('profileToggle').addEventListener('click', () => { $('profilePanel').classList.toggle('open'); });
+  $('ppCKD').addEventListener('change', () => { $('ppCKDSub').style.display = $('ppCKD').checked ? 'block' : 'none'; });
+  $('ppHF').addEventListener('change', () => { $('ppHFSub').style.display = $('ppHF').checked ? 'block' : 'none'; });
+  $('profileSaveBtn').addEventListener('click', saveProfile);
+  $('profileClearBtn').addEventListener('click', () => { if (confirm('Clear all patient profile data?')) clearProfile(); });
+  $('clearProfileBtn').addEventListener('click', () => { if (confirm('Clear all patient profile data?')) clearProfile(); });
+
   // Re-render canvases at high DPR for print, then restore
   window.addEventListener('beforeprint', () => {
     printDPR = 6;
@@ -2446,6 +2898,9 @@
     }
   }
   updateGoalHighlight();
+
+  // Auto-restore patient profile from localStorage
+  loadProfile();
 
   // Auto-restore last file from localStorage
   const saved = loadFromLocalStorage(STORAGE_PREFIX);
