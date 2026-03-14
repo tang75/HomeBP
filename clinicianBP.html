@@ -810,8 +810,8 @@
           const tc=chooseSigTextColor(baseColor,alpha);
           ctx.fillStyle=tc;ctx.font='bold 9px system-ui';ctx.textAlign='center';
           ctx.fillText(label, midX, yCenter+3);
-        } else if (clampX1 < W - PAD.r - 30) {
-          // Callout to the right (only if there's room)
+        } else if (clampedWidth >= 8 && clampX1 < W - PAD.r - 30) {
+          // Callout to the right (only if bar is wide enough to be visible and there's room)
           ctx.fillStyle='rgba(0,0,0,.85)';ctx.font='bold 9px system-ui';ctx.textAlign='left';
           ctx.fillText(label, clampX1+4, yCenter+3);
           ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=0.5;
