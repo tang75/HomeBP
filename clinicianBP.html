@@ -1047,6 +1047,33 @@
       }
     }
 
+    // Low (hypotensive) reading values — placed just BELOW each purple bar.
+    const hypoReadings = rs.filter(r => r.hypo).sort((a,b)=>a.t-b.t);
+    if(hypoReadings.length>0){
+      ctx.font='9px system-ui';
+      const axisY = yOf(yMin);          // bottom of plot area (y = 50)
+      const lh = 10;
+      const placed = [];                // placed label boxes, to avoid overlaps
+      for(const r of hypoReadings){
+        const x=xOf(r.t.getTime());
+        if(x<PAD.l||x>W-PAD.r) continue;
+        const lab=`${Math.round(r.sys)}/${Math.round(r.dia)}`;
+        const tw=ctx.measureText(lab).width;
+        let ly=yOf(r.dia)+2+lh;         // baseline just under the bar bottom (diastolic)
+        // stack downward if overlapping a nearby label, but never below the axis
+        let guard=0;
+        while(guard<4 && placed.some(pl=>Math.abs(pl.y-ly)<lh && x-tw/2<pl.x1 && x+tw/2>pl.x0)){ ly+=lh; guard++; }
+        if(ly>axisY-1) ly=axisY-1;
+        // in a dense cluster, skip rather than overprint
+        if(placed.some(pl=>Math.abs(pl.y-ly)<lh-2 && x-tw/2<pl.x1 && x+tw/2>pl.x0)) continue;
+        ctx.fillStyle='rgba(123,31,162,.95)';  // purple — matches Low bars
+        ctx.textAlign='center';
+        ctx.fillText(lab, x, ly);
+        ctx.textAlign='left';
+        placed.push({x0:x-tw/2-1, x1:x+tw/2+1, y:ly});
+      }
+    }
+
     // Hold-med stars
     if(holdEvts&&holdEvts.length){
       const yStar=yOf(yMin+5);
@@ -1605,6 +1632,20 @@
     html += '<th>% Green</th><th>&Delta; Grn pp</th><th>% Red</th><th>&Delta; Red pp</th><th>% Very High</th><th>&Delta; V.High pp</th><th># Holds</th><th>N</th>';
     html += '</tr></thead><tbody>';
 
+    // Color-code a mean SBP or DBP value by the configured thresholds (same colors
+    // as the timeline/legend): purple = Low, green = at goal, red = above goal,
+    // dark red = Very High. `isDia` picks the DBP thresholds.
+    const goalT = getGoal();
+    const thrT = getThresholdConfig();
+    const colorMeanBP = (val, isDia) => {
+      if (val == null || isNaN(val)) return fmtNum(val);
+      const low = isDia ? thrT.lowDia : thrT.lowSys;
+      const goalV = isDia ? goalT.dia : goalT.sys;
+      const sev = isDia ? thrT.severeDia : thrT.severeSys;
+      const color = val < low ? '#7B1FA2' : val < goalV ? '#1b7a3d' : val < sev ? '#c62828' : '#8b0000';
+      return `<span style="color:${color}; font-weight:700;">${fmtNum(val)}</span>`;
+    };
+
     for (let i = 0; i < tableRows.length; i++) {
       const r = tableRows[i];
       const pairIdx = Math.floor(i / 2);
@@ -1667,7 +1708,7 @@
       const borderStyle = r.isRecent && r.window === 'Morning' ? 'border-top:2px solid rgba(122,162,255,.4);' : '';
       html += `<tr style="${bgStyle}${borderStyle}">`;
       html += `<td>${phaseCell}</td><td class="muted small">${r.dateLabel}</td><td>${r.window}</td>`;
-      html += `<td>${fmtNum(r.meanSBP)}</td><td>${fmtDeltaBP(r.d_mean)}</td><td>${fmtNum(r.meanDBP)}</td><td>${fmtDeltaBP(r.d_meanDBP)}</td>`;
+      html += `<td>${colorMeanBP(r.meanSBP, false)}</td><td>${fmtDeltaBP(r.d_mean)}</td><td>${colorMeanBP(r.meanDBP, true)}</td><td>${fmtDeltaBP(r.d_meanDBP)}</td>`;
       html += `<td>${fmtPct(r.green)}</td><td>${fmtDelta(r.d_green, false)}</td>`;
       html += `<td>${fmtPct(r.red)}</td><td>${fmtDelta(r.d_red, true)}</td>`;
       html += `<td>${fmtPct(r.severe)}</td><td>${fmtDelta(r.d_sev, true)}</td>`;
@@ -2886,6 +2927,7 @@
           `<b>Threshold:</b> Labels shown for all readings with SBP ≥ ${thr.severeSys} (tracks the Very High SBP cutoff)`,
           `<b>Placement:</b> Labels are placed in white space ABOVE the BP bars only — never overlaying any bar. Collision detection checks against all bar bounding boxes AND previously placed labels`,
           `<b>Fallback for dense clusters:</b> If a label can't be placed (all positions overlap), apply 48hr peak-picking: among unplaced readings, only force-label the highest SBP within each 48hr window`,
+          `<b>Low readings:</b> Every Low (hypotensive) reading also shows its full value (SBP/DBP) in purple just BELOW its bar, so low episodes are labeled the way Very High readings are labeled above`,
         ]
       },
       {
@@ -2933,6 +2975,7 @@
           `<b>Data window (current phase):</b> Most recent ${recentWeeks} week(s) of readings, clipped to start no earlier than the current phase's start (the most recent medication change)`,
           `<b>Data window (historical phases):</b> Last ${recentWeeks} week(s) of readings that fall within the phase's actual date range. If the phase ended before that window existed (e.g., phase was only a few days long), the stacked distribution uses all in-phase readings as a fallback so every regimen contributes`,
           `<b>Per-window phase rows (AM/PM table):</b> For each phase, uses the last N=${N} readings that fall within that phase's actual start–end range (ignores Lookback setting)`,
+          `<b>Mean SBP / DBP color:</b> Each mean value is colored by its own threshold — purple if < Low (SBP ${thr.lowSys} / DBP ${thr.lowDia}), green if < goal (${goal.sys} / ${goal.dia}), red if above goal, dark red if ≥ Very High (${thr.severeSys} / ${thr.severeDia}). SBP and DBP are colored independently`,
           `<b>Stacked distribution bar:</b> Each regimen shows <b>two paired sub-bars — AM (Morning) and PM (Afternoon/Evening)</b> — each with 5 categories: Low (purple, SBP < ${thr.lowSys} or DBP < ${thr.lowDia}), At Goal (green, SBP < ${goal.sys} and DBP < ${goal.dia}), Near Goal (amber, within 2 mmHg of goal but not at goal), Above Goal (red, above near-goal threshold), Very High (hatched red, SBP ≥ ${thr.severeSys} or DBP ≥ ${thr.severeDia})`,
           `<b>AM / PM split:</b> Both sub-bars are drawn from the SAME per-regimen window (below), then split by time-of-day window, so their counts always sum to the regimen's total. Each sub-bar's percentages are of that sub-bar's own n. The <b>Score</b> still uses the pooled AM+PM distribution.`,
           `<b>Percentage labels:</b> Shown inside segments ≥ 6%. Segments 1–5% show labels below the bar in the segment's color. Segments < 1% are hidden`,

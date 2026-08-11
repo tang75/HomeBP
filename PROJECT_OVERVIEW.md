@@ -171,9 +171,12 @@ is too narrow to label inline, e.g. a short or very recent regimen).
 ## 6. The clinician dashboard, section by section
 
 - **Timeline** — the main visualization: two BP panels (Morning, Afternoon/Evening)
-  with color-coded bars, heart-rate line, goal/target lines, severe-reading labels,
+  with color-coded bars, heart-rate line, goal/target lines, Very-High value labels
+  above their bars, **Low (hypotensive) value labels in purple below their bars**,
   and hold-day stars; plus a medication-bar panel beneath, and a "recent N-week
-  average" summary card. **Zoom:** scroll the wheel over any chart to zoom the time
+  average" summary card. In the History-of-Response table, the **Mean SBP / DBP values
+  are color-coded** by the same thresholds (green at goal, red above, dark red Very
+  High, purple Low — each of SBP/DBP colored independently). **Zoom:** scroll the wheel over any chart to zoom the time
   axis, centered on the cursor; the three panels stay aligned because they share one
   time window. (The page itself still scrolls when the pointer is in the margins
   outside the charts.) When zoomed in, **click-drag** pans the view sideways (cursor

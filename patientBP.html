@@ -467,6 +467,31 @@
       }
     }
 
+    // Low (hypotensive) reading values — placed just BELOW each purple bar.
+    const hypoReadings = rs.filter(r => r.hypo).sort((a,b)=>a.t-b.t);
+    if(hypoReadings.length>0){
+      ctx.font='bold 11px system-ui';
+      const axisY = yOf(yMin);
+      const lh = 12;
+      const placed = [];
+      for(const r of hypoReadings){
+        const x=xOf(r.t.getTime());
+        if(x<PAD.l||x>W-PAD.r) continue;
+        const lab=`${Math.round(r.sys)}/${Math.round(r.dia)}`;
+        const tw=ctx.measureText(lab).width;
+        let ly=yOf(r.dia)+3+lh;
+        let guard=0;
+        while(guard<4 && placed.some(pl=>Math.abs(pl.y-ly)<lh && x-tw/2<pl.x1 && x+tw/2>pl.x0)){ ly+=lh; guard++; }
+        if(ly>axisY-1) ly=axisY-1;
+        if(placed.some(pl=>Math.abs(pl.y-ly)<lh-2 && x-tw/2<pl.x1 && x+tw/2>pl.x0)) continue;
+        ctx.fillStyle='rgba(123,31,162,.95)';
+        ctx.textAlign='center';
+        ctx.fillText(lab, x, ly);
+        ctx.textAlign='left';
+        placed.push({x0:x-tw/2-1, x1:x+tw/2+1, y:ly});
+      }
+    }
+
     // Hold-med stars
     if(holdEvts&&holdEvts.length){
       const yStar=yOf(yMin+5);
