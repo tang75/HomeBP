@@ -939,6 +939,11 @@
     const barWBase = Math.max(3, (BASE_BAR_W/(daysBetween(new Date(xMinMs),new Date(xMaxMs))))*plotW);
     const barWSevere = Math.max(5, (SEVERE_BAR_W/(daysBetween(new Date(xMinMs),new Date(xMaxMs))))*plotW);
 
+    // Clip all plotted content to the plot area so readings outside the (zoomed)
+    // visible window don't spill left of the y-axis or past the right edge.
+    ctx.save();
+    ctx.beginPath(); ctx.rect(PAD.l, 0, plotW, H); ctx.clip();
+
     for(const r of rs){
       const x=xOf(r.t.getTime());
       const ySys=yOf(r.sys), yDia=yOf(r.dia);
@@ -1085,6 +1090,8 @@
         ctx.fillText('\u2605', xOf(dt.getTime())-6, yStar);
       }
     }
+
+    ctx.restore(); // end plot-area clip (y-axis label below sits outside the plot)
 
     // Y-axis label
     ctx.save();ctx.translate(14,H/2);ctx.rotate(-Math.PI/2);
