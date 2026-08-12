@@ -1711,7 +1711,7 @@
       html += `<td>${colorMeanBP(r.meanSBP, false)}</td><td>${fmtDeltaBP(r.d_mean)}</td><td>${colorMeanBP(r.meanDBP, true)}</td><td>${fmtDeltaBP(r.d_meanDBP)}</td>`;
       html += `<td>${fmtPct(r.green)}</td><td>${fmtDelta(r.d_green, false)}</td>`;
       html += `<td>${fmtPct(r.red)}</td><td>${fmtDelta(r.d_red, true)}</td>`;
-      html += `<td>${fmtPct(r.severe)}</td><td>${fmtDelta(r.d_sev, true)}</td>`;
+      html += `<td style="${(r.severe != null && r.severe >= 10) ? 'color:#c62828; font-weight:700;' : ''}">${fmtPct(r.severe)}</td><td>${fmtDelta(r.d_sev, true)}</td>`;
       const holdStyle = r.holdCount > 0 ? 'color:#c62828; font-weight:700;' : '';
       html += `<td style="text-align:center; ${holdStyle}">${r.holdCount}</td>`;
       html += `<td>${r.n}</td>`;
@@ -2976,6 +2976,7 @@
           `<b>Data window (historical phases):</b> Last ${recentWeeks} week(s) of readings that fall within the phase's actual date range. If the phase ended before that window existed (e.g., phase was only a few days long), the stacked distribution uses all in-phase readings as a fallback so every regimen contributes`,
           `<b>Per-window phase rows (AM/PM table):</b> For each phase, uses the last N=${N} readings that fall within that phase's actual start–end range (ignores Lookback setting)`,
           `<b>Mean SBP / DBP color:</b> Each mean value is colored by its own threshold — purple if < Low (SBP ${thr.lowSys} / DBP ${thr.lowDia}), green if < goal (${goal.sys} / ${goal.dia}), red if above goal, dark red if ≥ Very High (${thr.severeSys} / ${thr.severeDia}). SBP and DBP are colored independently`,
+          `<b>% Very High highlight:</b> The <b>% Very High</b> cell is shown in <span style="color:#c62828;font-weight:700;">bold red</span> when ≥ 10% of that window's readings are Very High`,
           `<b>Stacked distribution bar:</b> Each regimen shows <b>two paired sub-bars — AM (Morning) and PM (Afternoon/Evening)</b> — each with 5 categories: Low (purple, SBP < ${thr.lowSys} or DBP < ${thr.lowDia}), At Goal (green, SBP < ${goal.sys} and DBP < ${goal.dia}), Near Goal (amber, within 2 mmHg of goal but not at goal), Above Goal (red, above near-goal threshold), Very High (hatched red, SBP ≥ ${thr.severeSys} or DBP ≥ ${thr.severeDia})`,
           `<b>AM / PM split:</b> Both sub-bars are drawn from the SAME per-regimen window (below), then split by time-of-day window, so their counts always sum to the regimen's total. Each sub-bar's percentages are of that sub-bar's own n. The <b>Score</b> still uses the pooled AM+PM distribution.`,
           `<b>Percentage labels:</b> Shown inside segments ≥ 6%. Segments 1–5% show labels below the bar in the segment's color. Segments < 1% are hidden`,
